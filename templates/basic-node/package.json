@@ -1,0 +1,20 @@
+{
+  "name": "basic-node-project",
+  "version": "1.0.0",
+  "description": "Basic Node.js project",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": ["node", "javascript"],
+  "author": "",
+  "license": "MIT"
+} 
