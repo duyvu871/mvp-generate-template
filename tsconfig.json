@@ -14,8 +14,6 @@
       "declaration": true,
       "declarationMap": false,
       "sourceMap": false,
-      "noEmit": true,
-      "allowImportingTsExtensions": false,
       "resolveJsonModule": true
     },
     "include": ["src/**/*"],

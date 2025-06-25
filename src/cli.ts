@@ -7,16 +7,19 @@ const program = new Command();
 
 program
   .name('mvp-gen')
-  .description('MVP Template Generator - Create projects quickly with beautiful templates')
+  .description(
+    'MVP Template Generator - Create projects quickly with beautiful templates'
+  )
   .version('1.0.0');
 
 // Register commands
 initCommand(program);
 
-// Parse command line arguments
-program.parse(process.argv);
-
 // Show help if no command provided
 if (!process.argv.slice(2).length) {
   program.outputHelp();
+  process.exit(0);
 }
+
+// Parse command line arguments
+program.parse(process.argv);

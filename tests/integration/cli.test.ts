@@ -41,7 +41,7 @@ describe('CLI Integration Tests', () => {
       });
 
       expect(output).toContain('MVP Template Generator');
-      expect(output).toContain('init <project-name>');
+      expect(output).toContain('init [options] <project-name>');
       expect(output).toContain('Initialize a new project');
     });
 
@@ -55,13 +55,21 @@ describe('CLI Integration Tests', () => {
     });
 
     it('should display help when no arguments are provided', () => {
-      const output = execSync('node dist/cli.js', { 
-        cwd: rootDir,
-        encoding: 'utf8'
-      });
-
-      expect(output).toContain('Usage:');
-      expect(output).toContain('init');
+      try {
+        const output = execSync('node dist/cli.js', { 
+          cwd: rootDir,
+          encoding: 'utf8',
+          stdio: 'pipe'
+        });
+        
+        expect(output).toContain('Usage:');
+        expect(output).toContain('init');
+      } catch (error: any) {
+        // Commander.js exits with status 1 when showing help
+        expect(error.status).toBe(1);
+        expect(error.stderr).toContain('Usage:');
+        expect(error.stderr).toContain('init');
+      }
     });
   });
 

@@ -54,12 +54,9 @@ describe('Prompts Utils', () => {
 
       const promptCall = mockPrompt.mock.calls[0][0][0];
       expect(promptCall.choices).toHaveLength(4);
-      expect(promptCall.choices.map((choice: any) => choice.value)).toEqual([
-        'express-hbs',
-        'express-api',
-        'node-cli',
-        'basic-node',
-      ]);
+      expect(
+        promptCall.choices.map((choice: { value: string }) => choice.value)
+      ).toEqual(['express-hbs', 'express-api', 'node-cli', 'basic-node']);
     });
   });
 
@@ -123,4 +120,4 @@ describe('Prompts Utils', () => {
       expect(promptCall.default).toBe(false);
     });
   });
-}); 
+});

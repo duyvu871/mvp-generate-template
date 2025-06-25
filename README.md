@@ -1,45 +1,84 @@
 # 🚀 MVP Template Generator
 
-[![CI](https://github.com/your-username/mvp-generate-template/workflows/CI/badge.svg)](https://github.com/your-username/mvp-generate-template/actions)
-[![codecov](https://codecov.io/gh/your-username/mvp-generate-template/branch/main/graph/badge.svg)](https://codecov.io/gh/your-username/mvp-generate-template)
-[![npm version](https://badge.fury.io/js/mvp-generate-template.svg)](https://badge.fury.io/js/mvp-generate-template)
+[![npm version](https://badge.fury.io/js/@ssit%2Fmvp-generate-template.svg)](https://badge.fury.io/js/@ssit/mvp-generate-template)
+[![downloads](https://img.shields.io/npm/dm/@ssit/mvp-generate-template.svg)](https://npmjs.org/package/@ssit/mvp-generate-template)
+[![CI](https://github.com/duyvu871/mvp-generate-template/workflows/CI/badge.svg)](https://github.com/duyvu871/mvp-generate-template/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A beautiful CLI tool to quickly generate MVP project templates with modern frameworks and best practices.
+> A beautiful CLI tool to quickly generate MVP project templates with modern frameworks and best practices.
+
+Generate production-ready projects in seconds with interactive prompts, TypeScript support, and beautiful templates.
+
+![CLI Demo](https://raw.githubusercontent.com/duyvu871/mvp-generate-template/main/assets/demo.gif)
 
 ## ✨ Features
 
-- 🎨 **Beautiful ASCII Art Welcome** - Eye-catching CLI interface
-- 📋 **Interactive Template Selection** - Choose from multiple project types
-- ⚡ **Express + Handlebars** - Full web server with real-time time display
-- 🔧 **TypeScript Support** - Optional TypeScript configuration
-- 📦 **ESBuild Integration** - Fast compilation setup
-- 🎭 **Modern UI** - Beautiful responsive designs
-- 🔄 **Real-time Features** - Live updates and animations
-- ⚡ **Lightning Fast Build** - Uses ESBuild for ultra-fast compilation
-- 🧪 **Comprehensive Testing** - Unit and integration tests with Vitest
-- 🔍 **Code Quality Tools** - ESLint, Prettier, and automated CI/CD
+- 🎨 **Beautiful CLI Interface** - Interactive prompts with ASCII art
+- 📋 **Multiple Templates** - Express, APIs, CLI tools, and more
+- ⚡ **Express + Handlebars** - Full web server with real-time features
+- 🔧 **TypeScript Ready** - Optional TypeScript configuration
+- 📦 **ESBuild Integration** - Lightning-fast compilation
+- 🎭 **Modern UI Components** - Responsive designs out of the box
+- 🧪 **Testing Setup** - Vitest, ESLint, Prettier included
+- 🚀 **Production Ready** - CI/CD pipelines and best practices
 
-## 🛠️ Installation
+## 📦 Installation
 
-### Global Installation
 ```bash
-npm install -g mvp-generate-template
+# Install globally (recommended)
+npm install -g @ssit/mvp-generate-template
+
+# Or use with npx (no installation required)
+npx @ssit/mvp-generate-template init my-project
 ```
 
-### Local Development
-```bash
-git clone <repository-url>
-cd mvp-generate-template
-npm install
-npm run build
-```
+## 🚀 Quick Start
 
-## 🚀 Usage
-
-### Basic Usage
 ```bash
+# Create a new project
 mvp-gen init my-awesome-project
+
+# Follow the interactive prompts to:
+# 1. Choose your template
+# 2. Select TypeScript support
+# 3. Configure build tools
+```
+
+## 📋 Available Templates
+
+### 🌐 Express + Handlebars
+Perfect for full-stack web applications
+- Real-time server time display
+- Beautiful responsive UI with gradients
+- Handlebars templating engine
+- Auto-refresh functionality
+- Error pages (404/500)
+
+### ⚡ Express API
+RESTful API server template
+- Security middleware (Helmet, CORS)
+- Request logging with Morgan
+- Health check endpoints
+- JSON response handling
+
+### 📦 Node.js CLI Tool
+Command-line application template
+- Commander.js integration
+- Inquirer prompts
+- Chalk for colored output
+- Build scripts included
+
+### 🏗️ Basic Node.js
+Minimal Node.js project
+- Simple entry point
+- Package.json setup
+- NPM scripts configured
+
+## 🎯 CLI Usage
+
+### Basic Command
+```bash
+mvp-gen init <project-name>
 ```
 
 ### With Options
@@ -47,236 +86,147 @@ mvp-gen init my-awesome-project
 mvp-gen init my-project --template express-hbs --typescript --esbuild
 ```
 
-## 📋 Available Templates
+### Available Options
+| Option | Alias | Description | Default |
+|--------|-------|-------------|---------|
+| `--template <name>` | `-t` | Template to use | Interactive selection |
+| `--typescript` | `-ts` | Add TypeScript support | Prompted |
+| `--esbuild` | `-es` | Add ESBuild config | Prompted |
+| `--help` | `-h` | Show help | - |
+| `--version` | `-V` | Show version | - |
 
-### 🌐 Express + Handlebars
-- Full-featured web server
-- Real-time server time display
-- Beautiful responsive UI
-- Handlebars templating
-- Auto-refresh functionality
+### Template Names
+- `express-hbs` - Express + Handlebars
+- `express-api` - Express API server
+- `node-cli` - Node.js CLI tool
+- `basic-node` - Basic Node.js project
 
-### ⚡ Express API
-- REST API server
-- Security middleware (Helmet, CORS)
-- Request logging
-- Health check endpoints
+## 🎨 Interactive Experience
 
-### 🏗️ Basic Node.js
-- Simple Node.js project
-- Minimal setup
-- Perfect for learning
-
-## 🎯 CLI Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-t, --template <name>` | Project template to use | Interactive selection |
-| `-ts, --typescript` | Add TypeScript support | Interactive prompt |
-| `-es, --esbuild` | Add ESBuild configuration | Interactive prompt |
-
-## 🎨 Interactive Features
-
-When you run the CLI, you'll see:
-
-1. **Beautiful ASCII Art** - MVP-GEN logo with colorful display
-2. **Template Selection** - Interactive list with descriptions and emojis
-3. **Configuration Options** - TypeScript and ESBuild setup prompts
-4. **Progress Indicators** - Spinning loaders during project creation
-5. **Success Messages** - Clear next steps and instructions
-
-## 📁 Project Structure
+The CLI provides a beautiful interactive experience:
 
 ```
-mvp-generate-template/
+ ███╗   ███╗██╗   ██╗██████╗       ██████╗ ███████╗███╗   ██╗
+ ████╗ ████║██║   ██║██╔══██╗     ██╔════╝ ██╔════╝████╗  ██║
+ ██╔████╔██║██║   ██║██████╔╝     ██║  ███╗█████╗  ██╔██╗ ██║
+ ██║╚██╔╝██║╚██╗ ██╔╝██╔═══╝      ██║   ██║██╔══╝  ██║╚██╗██║
+ ██║ ╚═╝ ██║ ╚████╔╝ ██║          ╚██████╔╝███████╗██║ ╚████║
+ ╚═╝     ╚═╝  ╚═══╝  ╚═╝           ╚═════╝ ╚══════╝╚═╝  ╚═══╝
+
+          🚀 Project Template Generator 🚀
+
+? Select a project template:
+❯ 🌐 Express + Handlebars (Node.js web server)
+  ⚡ Express API (REST API server)
+  📦 Node.js CLI Tool
+  🏗️ Basic Node.js Project
+```
+
+## 📖 Examples
+
+### Create an Express Web App
+```bash
+mvp-gen init my-webapp
+# Select: Express + Handlebars
+# TypeScript: Yes
+# ESBuild: Yes
+```
+
+### Create an API Server
+```bash
+mvp-gen init my-api --template express-api --typescript
+```
+
+### Create a CLI Tool
+```bash
+npx @ssit/mvp-generate-template init my-cli-tool --template node-cli
+```
+
+## 🔧 Generated Project Structure
+
+```
+my-project/
 ├── src/
-│   ├── commands/
-│   │   └── init.ts           # Main init command
-│   ├── utils/
-│   │   ├── ascii.ts          # ASCII art display
-│   │   ├── prompts.ts        # Interactive prompts
-│   │   └── project.ts        # Project setup utilities
-│   └── cli.ts                # CLI entry point
+│   ├── index.ts          # Main entry point
+│   ├── routes/           # Express routes (if applicable)
+│   ├── views/            # Handlebars templates (if applicable)
+│   └── public/           # Static assets (if applicable)
 ├── tests/
-│   ├── helpers/              # Test utilities
-│   └── integration/          # Integration tests
-├── templates/
-│   ├── express-hbs/          # Express + Handlebars template
-│   ├── express-api/          # Express API template
-│   └── basic-node/           # Basic Node.js template
-├── scripts/
-│   └── test-build.mjs        # Build testing script
-├── .github/workflows/        # GitHub Actions CI/CD
-├── esbuild.config.mjs        # ESBuild configuration
-├── vitest.config.ts          # Vitest configuration
-├── .eslintrc.json           # ESLint configuration
-├── .prettierrc.json         # Prettier configuration
-├── package.json
-├── tsconfig.json
-└── README.md
+│   └── index.test.ts     # Test files
+├── package.json          # Dependencies and scripts
+├── tsconfig.json         # TypeScript config (if selected)
+├── esbuild.config.mjs    # ESBuild config (if selected)
+├── .eslintrc.json        # ESLint configuration
+├── .prettierrc.json      # Prettier configuration
+└── README.md             # Project documentation
 ```
 
-## 🎭 Express + Handlebars Template Features
+## 🚀 After Generation
 
-The flagship template includes:
-
-- **Real-time Clock Display** - Shows server time in multiple formats
-- **Beautiful Gradient Design** - Modern UI with animations
-- **Interactive Time Refresh** - Manual and automatic updates
-- **Responsive Layout** - Mobile-friendly design
-- **Error Pages** - Custom 404 and 500 error pages
-- **API Endpoints** - JSON time API for frontend integration
-
-### Template Pages
-- **Home Page** - Time display with feature showcase
-- **API Endpoint** - `/api/time` for JSON responses
-- **Error Handling** - Graceful error pages
-
-## 🔧 Development & Build
-
-### Available Scripts
+Once your project is generated:
 
 ```bash
-# Development with watch mode (auto-rebuild)
-npm run dev
+cd my-project
+npm install
 
-# Build for development
-npm run build
+# Development
+npm run dev        # Start development server
+npm run build      # Build for production
+npm test           # Run tests
 
-# Build for production (minified)
-npm run build:prod
-
-# Test the build
-npm run test-build
-
-# Clean build directory
-npm run clean
-
-# Run tests
-npm test
-npm run test:watch        # Watch mode
-npm run test:coverage     # With coverage
-
-# Code quality
-npm run lint              # Lint code
-npm run lint:fix          # Fix linting issues
-npm run format            # Format code
-npm run format:check      # Check formatting
-npm run typecheck         # Type checking
-
-# Full CI pipeline
-npm run ci                # Run all checks
-
-# Quick test (build + help)
-npm run test-build
+# Code Quality
+npm run lint       # Lint code
+npm run format     # Format code
 ```
 
-### Development Workflow
+## 🛠️ Requirements
+
+- **Node.js**: 16.0.0 or higher
+- **npm**: 7.0.0 or higher
+
+## 🔄 Updates
+
+Keep your global installation up to date:
 
 ```bash
-# Start development with auto-reload
-npm run dev
+npm update -g @ssit/mvp-generate-template
 
-# In another terminal, test your changes
-node dist/cli.js init test-project
-
-# Run tests in watch mode
-npm run test:watch
-
-# Check code quality
-npm run lint
-npm run format:check
+# Check current version
+mvp-gen --version
 ```
-
-### Testing
-
-The project includes comprehensive testing:
-
-- **Unit Tests** - For individual functions and utilities
-- **Integration Tests** - For CLI functionality and templates
-- **Coverage Reports** - Minimum 80% coverage required
-- **Cross-platform Testing** - Tested on Linux, Windows, and macOS
-
-```bash
-# Run all tests
-npm test
-
-# Watch mode for development
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-
-# Test CLI build process
-npm run test-build
-```
-
-### Code Quality
-
-- **ESLint** - Catches potential bugs and enforces code style
-- **Prettier** - Consistent code formatting
-- **TypeScript** - Type safety and better IDE support
-- **Vitest** - Fast testing framework with coverage
-- **GitHub Actions** - Automated CI/CD pipeline
-
-## 🚀 Performance
-
-Thanks to ESBuild, the CLI tool offers:
-
-- **Build Speed**: ~10x faster than traditional TypeScript compiler
-- **Bundle Size**: Optimized output with tree-shaking
-- **Startup Time**: Near-instant CLI execution
-- **Watch Mode**: Lightning-fast rebuilds during development
-
-## 🔄 CI/CD Pipeline
-
-The project includes automated workflows for:
-
-### Continuous Integration
-- **Code Quality Checks** - Linting, formatting, type checking
-- **Testing** - Unit and integration tests with coverage
-- **Cross-platform Testing** - Linux, Windows, macOS
-- **Security Analysis** - CodeQL security scanning
-- **Build Verification** - Ensure CLI builds and works correctly
-
-### Continuous Deployment
-- **Automated Releases** - Create GitHub releases on version tags
-- **NPM Publishing** - Automatic package publishing
-- **Release Notes** - Generated from commits and changes
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow these steps:
+Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md).
 
-1. **Fork the repository**
-2. **Create your feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes** with `npm run dev` for auto-rebuild
-4. **Write tests** for your changes
-5. **Run the full CI pipeline** (`npm run ci`)
-6. **Test the build** (`npm run test-build`)
-7. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-8. **Push to the branch** (`git push origin feature/amazing-feature`)
-9. **Open a Pull Request**
-
-### Development Guidelines
-
-- Follow the existing code style (enforced by ESLint and Prettier)
-- Write tests for new functionality
-- Ensure all CI checks pass
-- Update documentation as needed
-- Test your changes across different platforms
-
-## 📊 Quality Metrics
-
-- **Test Coverage**: Minimum 80% required
-- **Build Time**: < 5 seconds for development builds
-- **CLI Startup**: < 500ms for command execution
-- **Cross-platform**: Tested on Node.js 16, 18, and 20
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests (`npm test`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## 📄 License
 
-MIT License - feel free to use this project for your awesome MVPs!
+MIT © [Bùi An Du](https://github.com/duyvu871)
 
-## 🎉 Happy Coding!
+## 🔗 Links
 
-Created with ❤️ for developers who want to build MVPs quickly and beautifully. 
+- [npm package](https://www.npmjs.com/package/@ssit/mvp-generate-template)
+- [GitHub repository](https://github.com/duyvu871/mvp-generate-template)
+- [Report issues](https://github.com/duyvu871/mvp-generate-template/issues)
+- [Changelog](CHANGELOG.md)
+
+## ⭐ Support
+
+If this tool helps you build amazing projects, please consider:
+
+- ⭐ Starring the repository
+- 🐛 Reporting bugs and issues
+- 💡 Suggesting new features
+- 📖 Improving documentation
+
+---
+
+**Happy coding!** 🎉 Build your MVP faster with beautiful, production-ready templates. 

@@ -9,22 +9,22 @@ export async function determineTemplate(): Promise<string> {
       choices: [
         {
           name: '🌐 Express + Handlebars (Node.js web server)',
-          value: 'express-hbs'
+          value: 'express-hbs',
         },
         {
           name: '⚡ Express API (REST API server)',
-          value: 'express-api'
+          value: 'express-api',
         },
         {
           name: '📦 Node.js CLI Tool',
-          value: 'node-cli'
+          value: 'node-cli',
         },
         {
           name: '🏗️ Basic Node.js Project',
-          value: 'basic-node'
-        }
-      ]
-    }
+          value: 'basic-node',
+        },
+      ],
+    },
   ]);
   return template;
 }
@@ -35,8 +35,8 @@ export async function confirmTypeScript(): Promise<boolean> {
       type: 'confirm',
       name: 'useTypeScript',
       message: 'Add TypeScript support?',
-      default: true
-    }
+      default: true,
+    },
   ]);
   return useTypeScript;
 }
@@ -47,8 +47,8 @@ export async function confirmESBuild(): Promise<boolean> {
       type: 'confirm',
       name: 'useESBuild',
       message: 'Add ESBuild for fast compilation?',
-      default: false
-    }
+      default: false,
+    },
   ]);
   return useESBuild;
-} 
+}

@@ -8,29 +8,29 @@ type ProjectConfig = {
 };
 
 export async function updatePackageJson(
-  targetDir: string, 
-  projectName: string, 
+  targetDir: string,
+  projectName: string,
   config: ProjectConfig
 ) {
   const packageJsonPath = path.join(targetDir, 'package.json');
-  let packageJson = await fs.readJson(packageJsonPath);
+  const packageJson = await fs.readJson(packageJsonPath);
 
   // Update project name
   packageJson.name = projectName;
-  
+
   // Add TypeScript dependencies if needed
   if (config.typescript) {
     packageJson.devDependencies = {
       ...packageJson.devDependencies,
-      'typescript': '^5.0.0',
+      typescript: '^5.0.0',
       '@types/node': '^20.0.0',
-      'ts-node': '^10.9.0'
+      'ts-node': '^10.9.0',
     };
-    
+
     packageJson.scripts = {
       ...packageJson.scripts,
-      'build': 'tsc',
-      'dev': 'ts-node src/index.ts'
+      build: 'tsc',
+      dev: 'ts-node src/index.ts',
     };
   }
 
@@ -38,12 +38,13 @@ export async function updatePackageJson(
   if (config.esbuild) {
     packageJson.devDependencies = {
       ...packageJson.devDependencies,
-      'esbuild': '^0.19.0'
+      esbuild: '^0.19.0',
     };
-    
+
     packageJson.scripts = {
       ...packageJson.scripts,
-      'build:fast': 'esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js'
+      'build:fast':
+        'esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js',
     };
   }
 
@@ -54,19 +55,19 @@ export async function setupTypeScript(targetDir: string) {
   const tsConfigPath = path.join(targetDir, 'tsconfig.json');
   const tsConfig = {
     compilerOptions: {
-      target: "ES2020",
-      module: "NodeNext",
-      moduleResolution: "NodeNext",
-      outDir: "./dist",
-      rootDir: "./src",
+      target: 'ES2020',
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      outDir: './dist',
+      rootDir: './src',
       strict: true,
       esModuleInterop: true,
       skipLibCheck: true,
       forceConsistentCasingInFileNames: true,
-      isolatedModules: true
+      isolatedModules: true,
     },
-    include: ["src/**/*"],
-    exclude: ["node_modules"]
+    include: ['src/**/*'],
+    exclude: ['node_modules'],
   };
 
   await fs.writeJson(tsConfigPath, tsConfig, { spaces: 2 });
@@ -96,12 +97,12 @@ export function printNextSteps(projectName: string, config: ProjectConfig) {
   console.log(chalk.yellow('Next steps:'));
   console.log(chalk.white(`  cd ${projectName}`));
   console.log(chalk.white('  npm install'));
-  
+
   if (config.typescript) {
     console.log(chalk.white('  npm run dev    # Start development server'));
   } else {
     console.log(chalk.white('  npm start      # Start the application'));
   }
-  
+
   console.log(chalk.cyan('\n🎉 Happy coding!\n'));
-} 
+}

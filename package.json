@@ -1,7 +1,7 @@
 {
-  "name": "mvp-generate-template",
+  "name": "@ssit/mvp-generate-template",
   "version": "1.0.0",
-  "description": "A CLI tool to generate MVP project templates quickly",
+  "description": "A beautiful CLI tool to quickly generate MVP project templates with modern frameworks and best practices",
   "main": "dist/cli.js",
   "type": "module",
   "bin": {
@@ -33,7 +33,7 @@
     "ora": "^7.0.1"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "typescript": "4.7.4",
     "@types/node": "^20.0.0",
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^9.0.7",
@@ -48,7 +48,8 @@
     "@vitest/coverage-v8": "^0.34.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
   },
   "keywords": [
     "cli",
@@ -56,12 +57,35 @@
     "generator",
     "express",
     "mvp",
-    "project-scaffold"
+    "project-scaffold",
+    "typescript",
+    "handlebars",
+    "esbuild",
+    "nodejs",
+    "web-server",
+    "api",
+    "bootstrap",
+    "starter-kit"
   ],
-  "author": "",
+  "author": {
+    "name": "Bùi An Du",
+    "email": "dubuicp123@gmail.com",
+    "url": "https://github.com/duyvu871"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
-  }
+    "url": "https://github.com/duyvu871/mvp-generate-template.git"
+  },
+  "bugs": {
+    "url": "https://github.com/duyvu871/mvp-generate-template/issues"
+  },
+  "homepage": "https://github.com/duyvu871/mvp-generate-template#readme",
+  "files": [
+    "dist/",
+    "templates/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ]
 }

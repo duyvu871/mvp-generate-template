@@ -1,13 +1,21 @@
 import { Command } from 'commander';
-import inquirer from 'inquirer';
 import chalk from 'chalk';
 import fs from 'fs-extra';
 import path from 'path';
 import ora from 'ora';
 import { fileURLToPath } from 'url';
 import { displayWelcome } from '../utils/ascii.js';
-import { determineTemplate, confirmTypeScript, confirmESBuild } from '../utils/prompts.js';
-import { updatePackageJson, setupTypeScript, setupESBuild, printNextSteps } from '../utils/project.js';
+import {
+  determineTemplate,
+  confirmTypeScript,
+  confirmESBuild,
+} from '../utils/prompts.js';
+import {
+  updatePackageJson,
+  setupTypeScript,
+  setupESBuild,
+  printNextSteps,
+} from '../utils/project.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,7 +38,10 @@ export function initCommand(program: Command) {
         displayWelcome();
         await initializeProject(projectName, options);
       } catch (error) {
-        console.error(chalk.red('Error:'), error instanceof Error ? error.message : error);
+        console.error(
+          chalk.red('Error:'),
+          error instanceof Error ? error.message : error
+        );
         process.exit(1);
       }
     });
@@ -38,16 +49,16 @@ export function initCommand(program: Command) {
 
 async function initializeProject(projectName: string, options: InitOptions) {
   const targetDir = path.resolve(process.cwd(), projectName);
-  
+
   // Kiểm tra thư mục tồn tại
   if (await fs.pathExists(targetDir)) {
     throw new Error(`Directory "${targetDir}" already exists!`);
   }
 
   // Xác định template
-  const template = options.template || await determineTemplate();
-  const useTypeScript = options.typescript ?? await confirmTypeScript();
-  const useESBuild = options.esbuild ?? await confirmESBuild();
+  const template = options.template || (await determineTemplate());
+  const useTypeScript = options.typescript ?? (await confirmTypeScript());
+  const useESBuild = options.esbuild ?? (await confirmESBuild());
 
   const spinner = ora('Creating project...').start();
 
@@ -62,7 +73,7 @@ async function initializeProject(projectName: string, options: InitOptions) {
     // Cập nhật package.json
     await updatePackageJson(targetDir, projectName, {
       typescript: useTypeScript,
-      esbuild: useESBuild
+      esbuild: useESBuild,
     });
 
     // Thêm cấu hình TypeScript nếu cần
@@ -75,8 +86,13 @@ async function initializeProject(projectName: string, options: InitOptions) {
       await setupESBuild(targetDir);
     }
 
-    spinner.succeed(chalk.green(`Project "${projectName}" created successfully!`));
-    printNextSteps(projectName, { typescript: useTypeScript, esbuild: useESBuild });
+    spinner.succeed(
+      chalk.green(`Project "${projectName}" created successfully!`)
+    );
+    printNextSteps(projectName, {
+      typescript: useTypeScript,
+      esbuild: useESBuild,
+    });
   } catch (error) {
     spinner.fail(chalk.red('Failed to create project'));
     throw error;
