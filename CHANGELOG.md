@@ -17,6 +17,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plugin system for custom templates
 - Interactive template customization
 
+## [0.3.0] - 2025-06-25
+
+### Added
+- **Git-Based Configuration System**: Remote configuration and template loading
+  - Load workflow configurations from Git repositories
+  - Load templates configurations from Git repositories  
+  - Download templates directly from Git repositories
+  - Support for custom Git repository URLs with `--repo` option
+  - Support for specific Git branches with `--branch` option
+  - Automatic fallback to local files when Git access fails
+
+- **Enhanced CLI Options**: Git repository integration
+  - `--repo <url>`: Git repository URL for configurations and templates
+  - `--branch <name>`: Git branch to use (default: main)
+  - Smart temporary directory management for Git operations
+  - Comprehensive Git operation logging in debug mode
+
+- **Advanced Template Management**: Complete template coverage
+  - 18+ template variants with all language/build combinations
+  - Comprehensive templates configuration with full metadata
+  - Enhanced template discovery from Git repositories
+  - Graceful fallback from Git to local templates
+
+- **Configuration Priority System**: Intelligent configuration loading
+  - Local files checked first, then Git repository
+  - Graceful fallback when Git operations fail
+  - Comprehensive error handling and user feedback
+  - Debug logging for configuration discovery process
+
+- **Repository Structure Support**: Organized configuration repositories
+  - Support for `config/` directory structure
+  - Root level configuration files
+  - Custom template directories in Git repositories
+  - Flexible path resolution for configurations
+
+### Changed
+- **Configuration Loading**: Enhanced with Git support
+  - All configuration functions now support Git URLs
+  - Automatic repository cloning and caching
+  - Smart pull operations for existing repositories
+  - Temporary directory cleanup management
+
+- **Template Discovery**: Multi-source template resolution
+  - Git repositories as primary template source
+  - Local templates as fallback option
+  - Enhanced error messages with Git suggestions
+  - Performance optimizations for Git operations
+
+### Technical Details
+- **Git Integration**: Native git commands for repository operations
+- **Temporary Files**: Smart temporary directory management for Git operations
+- **Error Handling**: Comprehensive Git operation error handling
+- **Performance**: Shallow clones and reusable temp directories for efficiency
+
+### Example Usage
+
+#### Using Git Repository for Configurations
+```bash
+# Use default Git repository (https://github.com/duyvu871/mvp-generate-template.git)
+mvp-gen init my-project --repo https://github.com/duyvu871/mvp-generate-template.git
+
+# Use custom Git repository with specific branch
+mvp-gen init my-app --repo https://github.com/user/custom-configs.git --branch develop
+
+# Use specific configuration files from Git
+mvp-gen init my-project --workflow config/advanced-workflow.yml --repo https://github.com/user/configs.git
+
+# Debug Git operations
+mvp-gen init my-app --repo https://github.com/user/configs.git --debug
+```
+
+#### Local + Git Hybrid Approach
+```bash
+# Try local first, fallback to Git
+mvp-gen init my-project --repo https://github.com/user/configs.git
+
+# Use local workflow, Git templates
+mvp-gen init my-app --workflow ./local-workflow.yml --repo https://github.com/user/templates.git
+```
+
+### Repository Structure for Git-Based Configurations
+```
+your-config-repo/
+├── config/
+│   ├── workflow.yml          # Workflow configuration
+│   ├── templates.json        # Templates configuration
+│   └── advanced-workflow.yml # Alternative workflow
+├── templates/
+│   ├── ts-esbuild-express-hbs/
+│   ├── js-default-express-api/
+│   └── custom-template/
+├── mvp-gen.yml              # Root level workflow
+└── templates.json           # Root level templates config
+```
+
+### Migration Guide for 0.3.0
+- **Existing Projects**: Continue to work without any changes
+- **New Git Features**: Add `--repo` option to download templates and configurations from Git
+- **Configuration Files**: Can be stored locally or in Git repositories
+- **Templates**: Available locally and from Git repositories with automatic fallback
+- **Debug Mode**: Use `--debug` flag to troubleshoot Git operations and configuration loading
+
 ## [0.2.0] - 2025-06-25
 
 ### Added

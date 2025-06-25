@@ -23,6 +23,7 @@ import {
   createDefaultWorkflowConfig,
   createDefaultTemplatesConfig,
   getTemplateConfig,
+  downloadTemplatesFromGit,
 } from '../utils/config.js';
 import {
   executeWorkflowPrompts,
@@ -62,6 +63,8 @@ type InitOptions = {
   config?: string;
   workflow?: string;
   templates?: string;
+  repo?: string;
+  branch?: string;
   debug?: boolean;
   verbose?: boolean;
 };
@@ -79,6 +82,11 @@ export function initCommand(program: Command) {
     .option('-c, --config <path>', 'Use specific configuration file')
     .option('-w, --workflow <path>', 'Use specific workflow YAML file')
     .option('--templates <path>', 'Use specific templates JSON file')
+    .option(
+      '-r, --repo <url>',
+      'Git repository URL for configurations and templates'
+    )
+    .option('-b, --branch <name>', 'Git branch to use (default: main)')
     .option('--debug', 'Show detailed debug information')
     .option('--verbose', 'Show verbose output')
     .addHelpText(
@@ -92,6 +100,8 @@ Examples:
   $ mvp-gen init . --template express-api --typescript
   $ mvp-gen init my-project --config ./custom-config.yml
   $ mvp-gen init my-app --workflow ./workflow.yml --templates ./templates.json
+  $ mvp-gen init my-project --repo https://github.com/user/config-repo.git
+  $ mvp-gen init my-app --repo https://github.com/user/repo.git --branch develop
   $ mvp-gen init my-project --debug  Show debug information
     `
     )
@@ -160,11 +170,16 @@ async function initializeProject(projectName: string, options: InitOptions) {
   let workflowConfig;
   let templatesConfig;
 
-  // Load configuration files
+  // Load configuration files with Git support
   try {
     if (options.workflow || options.templates) {
       // Use specific config files
-      globalConfig = await loadConfig(options.workflow, options.templates);
+      globalConfig = await loadConfig(
+        options.workflow,
+        options.templates,
+        options.repo,
+        options.branch
+      );
     } else if (options.config) {
       // Use unified config file (not implemented yet, for future)
       console.log(
@@ -172,17 +187,29 @@ async function initializeProject(projectName: string, options: InitOptions) {
           '⚠️ Unified config files not yet supported. Using workflow and templates separately.'
         )
       );
-      const configFiles = await findConfigFiles(rootDir);
+      const configFiles = await findConfigFiles(
+        rootDir,
+        options.repo,
+        options.branch
+      );
       globalConfig = await loadConfig(
         configFiles.workflow,
-        configFiles.templates
+        configFiles.templates,
+        options.repo,
+        options.branch
       );
     } else {
       // Auto-discover config files
-      const configFiles = await findConfigFiles(rootDir);
+      const configFiles = await findConfigFiles(
+        rootDir,
+        options.repo,
+        options.branch
+      );
       globalConfig = await loadConfig(
         configFiles.workflow,
-        configFiles.templates
+        configFiles.templates,
+        options.repo,
+        options.branch
       );
     }
 
@@ -320,23 +347,57 @@ async function initializeProject(projectName: string, options: InitOptions) {
       spinner.text = 'Using fallback template structure...';
     }
 
-    const templatesDir = getTemplatesPath();
-    const fullTemplatePath = path.join(templatesDir, templatePath);
-
-    // Verify template exists
-    if (!(await fs.pathExists(fullTemplatePath))) {
-      // Try fallback template structure
-      const fallbackTemplatePath = path.join(templatesDir, answers.template);
-      if (await fs.pathExists(fallbackTemplatePath)) {
-        spinner.text = 'Using legacy template structure...';
-        await fs.copy(fallbackTemplatePath, targetDir);
-      } else {
-        throw new Error(
-          `Template "${templatePath}" not found at ${fullTemplatePath}\nAlso tried fallback: ${fallbackTemplatePath}`
+    // Try downloading from Git first if repo URL provided
+    if (options.repo) {
+      try {
+        spinner.text = `Downloading template from Git repository...`;
+        await downloadTemplatesFromGit(
+          templatePath,
+          targetDir,
+          options.repo,
+          options.branch,
+          isDebug
         );
+      } catch (error) {
+        console.warn(
+          chalk.yellow(
+            `⚠️ Git template download failed: ${error instanceof Error ? error.message : error}`
+          )
+        );
+        console.log(chalk.gray('Falling back to local templates...'));
+
+        // Fallback to local templates
+        const templatesDir = getTemplatesPath();
+        const fullTemplatePath = path.join(templatesDir, templatePath);
+
+        if (await fs.pathExists(fullTemplatePath)) {
+          await fs.copy(fullTemplatePath, targetDir);
+        } else {
+          throw new Error(
+            `Template "${templatePath}" not found locally or in Git repository`
+          );
+        }
       }
     } else {
-      await fs.copy(fullTemplatePath, targetDir);
+      // Use local templates
+      const templatesDir = getTemplatesPath();
+      const fullTemplatePath = path.join(templatesDir, templatePath);
+
+      // Verify template exists
+      if (!(await fs.pathExists(fullTemplatePath))) {
+        // Try fallback template structure
+        const fallbackTemplatePath = path.join(templatesDir, answers.template);
+        if (await fs.pathExists(fallbackTemplatePath)) {
+          spinner.text = 'Using legacy template structure...';
+          await fs.copy(fallbackTemplatePath, targetDir);
+        } else {
+          throw new Error(
+            `Template "${templatePath}" not found at ${fullTemplatePath}\nAlso tried fallback: ${fallbackTemplatePath}\nConsider using --repo option to download from Git`
+          );
+        }
+      } else {
+        await fs.copy(fullTemplatePath, targetDir);
+      }
     }
 
     spinner.text = 'Updating configuration...';

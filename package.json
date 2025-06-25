@@ -1,6 +1,6 @@
 {
   "name": "@ssit-hub/mvp-generate-template",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A beautiful CLI tool to quickly generate MVP project templates with modern frameworks and best practices",
   "main": "dist/cli.js",
   "type": "module",

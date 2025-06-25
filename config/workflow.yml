@@ -1,6 +1,6 @@
 version: "1.0.0"
-name: "Advanced MVP Generator Workflow"
-description: "Configurable workflow for generating MVP projects with dynamic steps"
+name: "MVP Generator Git-Based Workflow"
+description: "Advanced workflow for generating MVP projects with Git repository support"
 
 steps:
   - type: input
@@ -24,19 +24,6 @@ steps:
       separator: " | "
     # Choices will be loaded from templates.json
 
-  - type: confirm
-    name: typescript
-    message: "Add TypeScript support?"
-    default: true
-    required: false
-
-  - type: confirm
-    name: esbuild
-    message: "Add ESBuild for fast compilation?"
-    default: true
-    when: hasTypeScript
-    required: false
-
   - type: checkbox
     name: features
     message: "Select additional features:"
@@ -56,6 +43,12 @@ steps:
       - name: "Documentation"
         value: docs
         description: "Add documentation templates"
+      - name: "Environment variables"
+        value: env
+        description: "Add .env configuration"
+      - name: "Linting & Formatting"
+        value: linting
+        description: "Add ESLint and Prettier configuration"
     required: false
 
   - type: list
@@ -65,12 +58,16 @@ steps:
     choices:
       - name: "MongoDB"
         value: mongodb
+        description: "NoSQL document database"
       - name: "PostgreSQL"
         value: postgresql
+        description: "Relational database"
       - name: "MySQL"
         value: mysql
+        description: "Popular relational database"
       - name: "SQLite"
         value: sqlite
+        description: "Lightweight file-based database"
     required: false
 
   - type: confirm
@@ -85,10 +82,17 @@ steps:
     default: true
     required: false
 
+  - type: input
+    name: gitRemote
+    message: "Git remote URL (optional):"
+    when: gitInit
+    required: false
+
 postProcess:
   updatePackageJson: true
   installDependencies: false
   customScripts:
     - "git init"
     - "git add ."
-    - "git commit -m 'Initial commit'" 
+    - "git commit -m 'Initial commit from MVP Generator'"
+    - "echo 'Project created successfully!'" 
