@@ -98,7 +98,7 @@ describe('Prompts Utils', () => {
           type: 'confirm',
           name: 'useESBuild',
           message: 'Add ESBuild for fast compilation?',
-          default: false,
+          default: true,
         },
       ]);
     });
@@ -111,13 +111,13 @@ describe('Prompts Utils', () => {
       expect(result).toBe(false);
     });
 
-    it('should default to false for ESBuild', async () => {
+    it('should default to true for ESBuild', async () => {
       mockPrompt.mockResolvedValue({ useESBuild: false });
 
       await confirmESBuild();
 
       const promptCall = mockPrompt.mock.calls[0][0][0];
-      expect(promptCall.default).toBe(false);
+      expect(promptCall.default).toBe(true);
     });
   });
 });

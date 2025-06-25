@@ -1,9 +1,9 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import { 
-  type PromptStep, 
-  type WorkflowConfig, 
-  type TemplatesConfig 
+import {
+  type PromptStep,
+  type WorkflowConfig,
+  type TemplatesConfig,
 } from '../schemas/config.js';
 import { getTemplateChoices } from './config.js';
 
@@ -24,11 +24,13 @@ const validationFunctions: Record<string, (value: any) => boolean | string> = {
       return 'Project name can only contain letters, numbers, hyphens, and underscores';
     }
     return true;
-  }
+  },
 };
 
 // Dynamic validation function creator
-export function createMinLengthValidator(min: number): (value: string) => boolean | string {
+export function createMinLengthValidator(
+  min: number
+): (value: string) => boolean | string {
   return (value: string) => {
     if (value.length < min) {
       return `Minimum length is ${min} characters`;
@@ -37,27 +39,29 @@ export function createMinLengthValidator(min: number): (value: string) => boolea
   };
 }
 
-// Condition functions registry  
-const conditionFunctions: Record<string, (answers: PromptAnswers) => boolean> = {
-  hasTypeScript: (answers: PromptAnswers) => answers.typescript === true,
-  hasESBuild: (answers: PromptAnswers) => answers.esbuild === true,
-  hasDatabase: (answers: PromptAnswers) => answers.features && answers.features.includes('database'),
-  isExpressTemplate: (answers: PromptAnswers) => 
-    answers.template === 'express-hbs' || answers.template === 'express-api'
-};
+// Condition functions registry
+const conditionFunctions: Record<string, (answers: PromptAnswers) => boolean> =
+  {
+    hasTypeScript: (answers: PromptAnswers) => answers.typescript === true,
+    hasESBuild: (answers: PromptAnswers) => answers.esbuild === true,
+    hasDatabase: (answers: PromptAnswers) =>
+      answers.features && answers.features.includes('database'),
+    isExpressTemplate: (answers: PromptAnswers) =>
+      answers.template === 'express-hbs' || answers.template === 'express-api',
+  };
 
 // Filter functions registry
 const filterFunctions: Record<string, (value: any) => any> = {
   trim: (value: string) => value.trim(),
   toLowerCase: (value: string) => value.toLowerCase(),
-  toKebabCase: (value: string) => value.toLowerCase().replace(/\s+/g, '-')
+  toKebabCase: (value: string) => value.toLowerCase().replace(/\s+/g, '-'),
 };
 
 /**
  * Execute a single prompt step
  */
 async function executePromptStep(
-  step: PromptStep, 
+  step: PromptStep,
   previousAnswers: PromptAnswers,
   templatesConfig?: TemplatesConfig
 ): Promise<any> {
@@ -73,22 +77,29 @@ async function executePromptStep(
     type: step.type,
     name: step.name,
     message: step.message,
-    default: step.default
+    default: step.default,
   };
 
   // Add choices for list/checkbox prompts
   if (step.choices && (step.type === 'list' || step.type === 'checkbox')) {
     promptConfig.choices = step.choices;
-  } else if (step.name === 'template' && templatesConfig && (step.type === 'list' || step.type === 'checkbox')) {
+  } else if (
+    step.name === 'template' &&
+    templatesConfig &&
+    (step.type === 'list' || step.type === 'checkbox')
+  ) {
     // Special handling for template choices - auto-populate from templates config
-    promptConfig.choices = getTemplateChoices(templatesConfig, step.templateDisplay);
+    promptConfig.choices = getTemplateChoices(
+      templatesConfig,
+      step.templateDisplay
+    );
   }
 
   // Add display configuration
   if (step.pageSize) {
     promptConfig.pageSize = step.pageSize;
   }
-  
+
   if (step.loop !== undefined) {
     promptConfig.loop = step.loop;
   }
@@ -126,13 +137,17 @@ export async function executeWorkflowPrompts(
   for (const step of workflow.steps) {
     try {
       const answer = await executePromptStep(step, answers, templatesConfig);
-      
+
       // Only store answer if step was not skipped
       if (answer !== undefined) {
         answers[step.name] = answer;
       }
     } catch (error) {
-      console.error(chalk.red(`❌ Error in step "${step.name}": ${error instanceof Error ? error.message : error}`));
+      console.error(
+        chalk.red(
+          `❌ Error in step "${step.name}": ${error instanceof Error ? error.message : error}`
+        )
+      );
       throw error;
     }
   }
@@ -143,21 +158,30 @@ export async function executeWorkflowPrompts(
 /**
  * Register custom validation function
  */
-export function registerValidationFunction(name: string, fn: (value: any) => boolean | string): void {
+export function registerValidationFunction(
+  name: string,
+  fn: (value: any) => boolean | string
+): void {
   validationFunctions[name] = fn;
 }
 
 /**
  * Register custom condition function
  */
-export function registerConditionFunction(name: string, fn: (answers: PromptAnswers) => boolean): void {
+export function registerConditionFunction(
+  name: string,
+  fn: (answers: PromptAnswers) => boolean
+): void {
   conditionFunctions[name] = fn;
 }
 
 /**
  * Register custom filter function
  */
-export function registerFilterFunction(name: string, fn: (value: any) => any): void {
+export function registerFilterFunction(
+  name: string,
+  fn: (value: any) => any
+): void {
   filterFunctions[name] = fn;
 }
 
@@ -189,7 +213,7 @@ export function createInquirerPrompt(step: PromptStep): any {
   const prompt: any = {
     type: step.type,
     name: step.name,
-    message: step.message
+    message: step.message,
   };
 
   if (step.default !== undefined) {
@@ -197,10 +221,10 @@ export function createInquirerPrompt(step: PromptStep): any {
   }
 
   if (step.choices && (step.type === 'list' || step.type === 'checkbox')) {
-    prompt.choices = step.choices.map(choice => ({
+    prompt.choices = step.choices.map((choice) => ({
       name: choice.name,
       value: choice.value,
-      short: choice.description
+      short: choice.description,
     }));
   }
 
@@ -210,7 +234,10 @@ export function createInquirerPrompt(step: PromptStep): any {
 /**
  * Validate prompt step configuration
  */
-export function validatePromptStep(step: PromptStep): { valid: boolean; errors: string[] } {
+export function validatePromptStep(step: PromptStep): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   // Check required fields
@@ -244,7 +271,7 @@ export function validatePromptStep(step: PromptStep): { valid: boolean; errors: 
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -263,16 +290,19 @@ export async function executePostProcessing(
   console.log(chalk.cyan('\n🔧 Executing post-processing steps...'));
 
   // Execute custom scripts
-  if (workflow.postProcess.customScripts && workflow.postProcess.customScripts.length > 0) {
+  if (
+    workflow.postProcess.customScripts &&
+    workflow.postProcess.customScripts.length > 0
+  ) {
     const { execSync } = await import('child_process');
-    
+
     for (const script of workflow.postProcess.customScripts) {
       try {
         console.log(chalk.gray(`  Running: ${script}`));
-        execSync(script, { 
-          cwd: targetDir, 
+        execSync(script, {
+          cwd: targetDir,
           stdio: 'inherit',
-          env: { ...process.env, ...answers }
+          env: { ...process.env, ...answers },
         });
       } catch (error) {
         console.error(chalk.red(`❌ Script failed: ${script}`));
@@ -282,4 +312,4 @@ export async function executePostProcessing(
   }
 
   console.log(chalk.green('✅ Post-processing completed'));
-} 
+}

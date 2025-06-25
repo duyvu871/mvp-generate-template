@@ -101,8 +101,11 @@ describe('CLI Integration Tests', () => {
       
       const expectedTemplates = [
         'express-hbs',
-        'express-api', 
-        'basic-node'
+        'ts-default-express-api',
+        'ts-default-basic-node',
+        'ts-esbuild-express-hbs',
+        'ts-esbuild-express-api',
+        'js-default-express-hbs'
       ];
 
       for (const template of expectedTemplates) {

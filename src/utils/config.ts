@@ -2,20 +2,22 @@ import fs from 'fs-extra';
 import path from 'path';
 import * as YAML from 'yaml';
 import chalk from 'chalk';
-import { 
-  ConfigSchema, 
-  WorkflowConfigSchema, 
+import {
+  WorkflowConfigSchema,
   TemplatesConfigSchema,
   type Config,
   type WorkflowConfig,
   type TemplatesConfig,
-  type TemplateConfig 
+  type TemplateConfig,
+  type TemplateOption,
 } from '../schemas/config.js';
 
 /**
  * Load and validate YAML configuration file
  */
-export async function loadWorkflowConfig(configPath: string): Promise<WorkflowConfig> {
+export async function loadWorkflowConfig(
+  configPath: string
+): Promise<WorkflowConfig> {
   try {
     if (!(await fs.pathExists(configPath))) {
       throw new Error(`Configuration file not found: ${configPath}`);
@@ -26,11 +28,13 @@ export async function loadWorkflowConfig(configPath: string): Promise<WorkflowCo
 
     // Validate with Zod schema
     const result = WorkflowConfigSchema.safeParse(parsedYaml);
-    
+
     if (!result.success) {
       console.error(chalk.red('❌ Invalid YAML configuration:'));
-      result.error.errors.forEach(error => {
-        console.error(chalk.red(`  • ${error.path.join('.')}: ${error.message}`));
+      result.error.errors.forEach((error) => {
+        console.error(
+          chalk.red(`  • ${error.path.join('.')}: ${error.message}`)
+        );
       });
       throw new Error('Configuration validation failed');
     }
@@ -47,7 +51,9 @@ export async function loadWorkflowConfig(configPath: string): Promise<WorkflowCo
 /**
  * Load and validate JSON templates configuration
  */
-export async function loadTemplatesConfig(configPath: string): Promise<TemplatesConfig> {
+export async function loadTemplatesConfig(
+  configPath: string
+): Promise<TemplatesConfig> {
   try {
     if (!(await fs.pathExists(configPath))) {
       throw new Error(`Templates configuration file not found: ${configPath}`);
@@ -58,11 +64,13 @@ export async function loadTemplatesConfig(configPath: string): Promise<Templates
 
     // Validate with Zod schema
     const result = TemplatesConfigSchema.safeParse(parsedJson);
-    
+
     if (!result.success) {
       console.error(chalk.red('❌ Invalid JSON templates configuration:'));
-      result.error.errors.forEach(error => {
-        console.error(chalk.red(`  • ${error.path.join('.')}: ${error.message}`));
+      result.error.errors.forEach((error) => {
+        console.error(
+          chalk.red(`  • ${error.path.join('.')}: ${error.message}`)
+        );
       });
       throw new Error('Templates configuration validation failed');
     }
@@ -79,9 +87,15 @@ export async function loadTemplatesConfig(configPath: string): Promise<Templates
 /**
  * Load configuration from multiple sources
  */
-export async function loadConfig(workflowPath?: string, templatesPath?: string): Promise<Config> {
+export async function loadConfig(
+  workflowPath?: string,
+  templatesPath?: string
+): Promise<Config> {
   const config: Config = {};
-  const isDebug = process.env.NODE_ENV === 'development' || process.argv.includes('--debug') || process.argv.includes('--verbose');
+  const isDebug =
+    process.env.NODE_ENV === 'development' ||
+    process.argv.includes('--debug') ||
+    process.argv.includes('--verbose');
 
   if (isDebug) {
     console.log(chalk.gray('\n🔍 Debug: Configuration loading...'));
@@ -101,7 +115,11 @@ export async function loadConfig(workflowPath?: string, templatesPath?: string):
         console.log(chalk.green(`✓ Loaded workflow config: ${workflowPath}`));
       }
     } catch (error: unknown) {
-      console.error(chalk.red(`❌ Failed to load workflow config: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(
+        chalk.red(
+          `❌ Failed to load workflow config: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
     }
   }
 
@@ -113,12 +131,18 @@ export async function loadConfig(workflowPath?: string, templatesPath?: string):
         console.log(chalk.green(`✓ Loaded templates config: ${templatesPath}`));
       }
     } catch (error: unknown) {
-      console.error(chalk.red(`❌ Failed to load templates config: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(
+        chalk.red(
+          `❌ Failed to load templates config: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
     }
   }
 
   if (isDebug && Object.keys(config).length === 0) {
-    console.log(chalk.yellow('⚠️ No configuration files loaded, using defaults'));
+    console.log(
+      chalk.yellow('⚠️ No configuration files loaded, using defaults')
+    );
   }
 
   return config;
@@ -127,16 +151,23 @@ export async function loadConfig(workflowPath?: string, templatesPath?: string):
 /**
  * Find configuration files in standard locations
  */
-export async function findConfigFiles(rootDir: string): Promise<{ workflow?: string; templates?: string }> {
-  const isDebug = process.env.NODE_ENV === 'development' || process.argv.includes('--debug') || process.argv.includes('--verbose');
-  
+export async function findConfigFiles(
+  rootDir: string
+): Promise<{ workflow?: string; templates?: string }> {
+  const isDebug =
+    process.env.NODE_ENV === 'development' ||
+    process.argv.includes('--debug') ||
+    process.argv.includes('--verbose');
+
   const configFiles = {
     workflow: undefined as string | undefined,
-    templates: undefined as string | undefined
+    templates: undefined as string | undefined,
   };
 
   if (isDebug) {
-    console.log(chalk.gray(`\n🔍 Debug: Searching for config files in ${rootDir}`));
+    console.log(
+      chalk.gray(`\n🔍 Debug: Searching for config files in ${rootDir}`)
+    );
   }
 
   // Standard workflow config locations (YAML)
@@ -146,12 +177,12 @@ export async function findConfigFiles(rootDir: string): Promise<{ workflow?: str
     path.join(rootDir, '.mvp-gen.yml'),
     path.join(rootDir, '.mvp-gen.yaml'),
     path.join(rootDir, 'config', 'workflow.yml'),
-    path.join(rootDir, 'config', 'workflow.yaml')
+    path.join(rootDir, 'config', 'workflow.yaml'),
   ];
 
   if (isDebug) {
     console.log(chalk.gray('  Checking workflow paths:'));
-    workflowPaths.forEach(p => console.log(chalk.gray(`    ${p}`)));
+    workflowPaths.forEach((p) => console.log(chalk.gray(`    ${p}`)));
   }
 
   for (const workflowPath of workflowPaths) {
@@ -169,12 +200,12 @@ export async function findConfigFiles(rootDir: string): Promise<{ workflow?: str
     path.join(rootDir, 'templates.json'),
     path.join(rootDir, '.templates.json'),
     path.join(rootDir, 'config', 'templates.json'),
-    path.join(rootDir, 'templates', 'config.json')
+    path.join(rootDir, 'templates', 'config.json'),
   ];
 
   if (isDebug) {
     console.log(chalk.gray('  Checking templates paths:'));
-    templatesPaths.forEach(p => console.log(chalk.gray(`    ${p}`)));
+    templatesPaths.forEach((p) => console.log(chalk.gray(`    ${p}`)));
   }
 
   for (const templatesPath of templatesPaths) {
@@ -189,8 +220,12 @@ export async function findConfigFiles(rootDir: string): Promise<{ workflow?: str
 
   if (isDebug) {
     console.log(chalk.gray('\n  Discovery results:'));
-    console.log(chalk.gray(`    Workflow: ${configFiles.workflow || 'not found'}`));
-    console.log(chalk.gray(`    Templates: ${configFiles.templates || 'not found'}`));
+    console.log(
+      chalk.gray(`    Workflow: ${configFiles.workflow || 'not found'}`)
+    );
+    console.log(
+      chalk.gray(`    Templates: ${configFiles.templates || 'not found'}`)
+    );
   }
 
   return configFiles;
@@ -199,17 +234,29 @@ export async function findConfigFiles(rootDir: string): Promise<{ workflow?: str
 /**
  * Get template configuration by name
  */
-export function getTemplateConfig(templates: TemplatesConfig, templateName: string): TemplateConfig | null {
-  return templates.templates.find((t: TemplateConfig) => t.name === templateName || t.path === templateName) || null;
+export function getTemplateConfig(
+  templates: TemplatesConfig,
+  templateName: string
+): TemplateConfig | null {
+  return (
+    templates.templates.find(
+      (t: TemplateConfig) => t.name === templateName || t.path === templateName
+    ) || null
+  );
 }
 
 /**
  * Filter templates by options
  */
-export function filterTemplatesByOptions(templates: TemplatesConfig, requiredOptions: string[]): TemplateConfig[] {
+export function filterTemplatesByOptions(
+  templates: TemplatesConfig,
+  requiredOptions: string[]
+): TemplateConfig[] {
   return templates.templates.filter((template: TemplateConfig) => {
     // Check if template supports all required options
-    return requiredOptions.every(option => template.options.includes(option as any));
+    return requiredOptions.every((option) =>
+      template.options.includes(option as TemplateOption)
+    );
   });
 }
 
@@ -217,7 +264,7 @@ export function filterTemplatesByOptions(templates: TemplatesConfig, requiredOpt
  * Get available template choices for inquirer with display configuration
  */
 export function getTemplateChoices(
-  templates: TemplatesConfig, 
+  templates: TemplatesConfig,
   displayConfig?: {
     showDescription?: boolean;
     showCategory?: boolean;
@@ -232,38 +279,52 @@ export function getTemplateChoices(
     showOptions: true,
     maxWidth: 200,
     separator: ' - ',
-    ...displayConfig
+    ...displayConfig,
   };
 
   return templates.templates
     .filter((template: TemplateConfig) => !template.deprecated)
-    .sort((a: TemplateConfig, b: TemplateConfig) => (b.priority || 0) - (a.priority || 0))
+    .sort(
+      (a: TemplateConfig, b: TemplateConfig) =>
+        (b.priority || 0) - (a.priority || 0)
+    )
     .map((template: TemplateConfig) => {
       let displayName = `${template.experimental ? '🧪 ' : ''}${template.name}`;
-      
+
       // Add category if enabled
       if (config.showCategory && template.category) {
         displayName = `[${template.category.toUpperCase()}] ${displayName}`;
       }
-      
+
       // Add options if enabled
       if (config.showOptions && template.options.length > 0) {
-        const optionsStr = template.options.map(opt => {
-          switch (opt) {
-            case 'ts': return 'TypeScript';
-            case 'esbuild': return 'ESBuild';
-            case 'nextjs': return 'Next.js';
-            case 'react': return 'React';
-            case 'vue': return 'Vue';
-            case 'docker': return 'Docker';
-            case 'mongodb': return 'MongoDB';
-            case 'postgresql': return 'PostgreSQL';
-            default: return opt;
-          }
-        }).join(' + ');
+        const optionsStr = template.options
+          .map((opt) => {
+            switch (opt) {
+              case 'ts':
+                return 'TypeScript';
+              case 'esbuild':
+                return 'ESBuild';
+              case 'nextjs':
+                return 'Next.js';
+              case 'react':
+                return 'React';
+              case 'vue':
+                return 'Vue';
+              case 'docker':
+                return 'Docker';
+              case 'mongodb':
+                return 'MongoDB';
+              case 'postgresql':
+                return 'PostgreSQL';
+              default:
+                return opt;
+            }
+          })
+          .join(' + ');
         displayName = `${displayName} (${optionsStr})`;
       }
-      
+
       // Add description on new line with gray color if enabled
       if (config.showDescription && template.description) {
         displayName = `${displayName}\n  ${chalk.gray(template.description)}`;
@@ -272,7 +333,7 @@ export function getTemplateChoices(
       return {
         name: displayName,
         value: template.path,
-        description: template.description
+        description: template.description,
       };
     });
 }
@@ -280,7 +341,10 @@ export function getTemplateChoices(
 /**
  * Validate template path exists
  */
-export async function validateTemplatePath(templatePath: string, rootDir: string): Promise<boolean> {
+export async function validateTemplatePath(
+  templatePath: string,
+  rootDir: string
+): Promise<boolean> {
   const fullPath = path.join(rootDir, 'templates', templatePath);
   return await fs.pathExists(fullPath);
 }
@@ -302,37 +366,37 @@ export function createDefaultWorkflowConfig(): WorkflowConfig {
           { name: '🌐 Express + Handlebars', value: 'express-hbs' },
           { name: '⚡ Express API', value: 'express-api' },
           { name: '📦 Node.js CLI Tool', value: 'node-cli' },
-          { name: '🏗️ Basic Node.js', value: 'basic-node' }
+          { name: '🏗️ Basic Node.js', value: 'basic-node' },
         ],
-        required: false
+        required: false,
       },
       {
         type: 'confirm',
         name: 'typescript',
         message: 'Add TypeScript support?',
         default: true,
-        required: false
+        required: false,
       },
       {
         type: 'confirm',
         name: 'esbuild',
         message: 'Add ESBuild for fast compilation?',
         default: true,
-        required: false
+        required: false,
       },
       {
         type: 'confirm',
         name: 'npmInstall',
         message: 'Install dependencies automatically?',
         default: true,
-        required: false
-      }
+        required: false,
+      },
     ],
     postProcess: {
       updatePackageJson: true,
       installDependencies: false,
-      customScripts: []
-    }
+      customScripts: [],
+    },
   };
 }
 
@@ -351,7 +415,7 @@ export function createDefaultTemplatesConfig(): TemplatesConfig {
         category: 'web',
         priority: 100,
         deprecated: false,
-        experimental: false
+        experimental: false,
       },
       {
         path: 'express-api',
@@ -361,7 +425,7 @@ export function createDefaultTemplatesConfig(): TemplatesConfig {
         category: 'api',
         priority: 90,
         deprecated: false,
-        experimental: false
+        experimental: false,
       },
       {
         path: 'node-cli',
@@ -371,7 +435,7 @@ export function createDefaultTemplatesConfig(): TemplatesConfig {
         category: 'cli',
         priority: 80,
         deprecated: false,
-        experimental: false
+        experimental: false,
       },
       {
         path: 'basic-node',
@@ -381,13 +445,13 @@ export function createDefaultTemplatesConfig(): TemplatesConfig {
         category: 'basic',
         priority: 70,
         deprecated: false,
-        experimental: false
-      }
+        experimental: false,
+      },
     ],
     defaultOptions: {
       typescript: true,
       esbuild: true,
-      npmInstall: true
-    }
+      npmInstall: true,
+    },
   };
-} 
+}

@@ -23,12 +23,11 @@ import {
   createDefaultWorkflowConfig,
   createDefaultTemplatesConfig,
   getTemplateConfig,
-  validateTemplatePath
 } from '../utils/config.js';
 import {
   executeWorkflowPrompts,
   executePostProcessing,
-  type PromptAnswers
+  type PromptAnswers,
 } from '../utils/dynamic-prompts.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -134,7 +133,7 @@ async function initializeProject(projectName: string, options: InitOptions) {
       '.mvp-gen.yml',
       '.mvp-gen.yaml',
       'templates.json',
-      '.templates.json'
+      '.templates.json',
     ];
     const nonAllowedFiles = files.filter(
       (file) => !allowedFiles.includes(file)
@@ -168,19 +167,33 @@ async function initializeProject(projectName: string, options: InitOptions) {
       globalConfig = await loadConfig(options.workflow, options.templates);
     } else if (options.config) {
       // Use unified config file (not implemented yet, for future)
-      console.log(chalk.yellow('⚠️ Unified config files not yet supported. Using workflow and templates separately.'));
+      console.log(
+        chalk.yellow(
+          '⚠️ Unified config files not yet supported. Using workflow and templates separately.'
+        )
+      );
       const configFiles = await findConfigFiles(rootDir);
-      globalConfig = await loadConfig(configFiles.workflow, configFiles.templates);
+      globalConfig = await loadConfig(
+        configFiles.workflow,
+        configFiles.templates
+      );
     } else {
       // Auto-discover config files
       const configFiles = await findConfigFiles(rootDir);
-      globalConfig = await loadConfig(configFiles.workflow, configFiles.templates);
+      globalConfig = await loadConfig(
+        configFiles.workflow,
+        configFiles.templates
+      );
     }
 
     workflowConfig = globalConfig.workflow;
     templatesConfig = globalConfig.templates;
   } catch (error) {
-    console.warn(chalk.yellow(`⚠️ Configuration loading failed: ${error instanceof Error ? error.message : error}`));
+    console.warn(
+      chalk.yellow(
+        `⚠️ Configuration loading failed: ${error instanceof Error ? error.message : error}`
+      )
+    );
     console.log(chalk.gray('Using default configuration...'));
   }
 
@@ -195,53 +208,84 @@ async function initializeProject(projectName: string, options: InitOptions) {
   // Get user preferences through dynamic prompts or CLI options
   let answers: PromptAnswers;
 
-  if (options.template || options.typescript !== undefined || options.esbuild !== undefined || options.install !== undefined) {
+  if (
+    options.template ||
+    options.typescript !== undefined ||
+    options.esbuild !== undefined ||
+    options.install !== undefined
+  ) {
     // Use CLI options (non-interactive mode)
     console.log(chalk.cyan('\n🤖 Using CLI options (non-interactive mode)'));
-    
+
     answers = {
       template: options.template || (await determineTemplate()),
       typescript: options.typescript ?? (await confirmTypeScript()),
       esbuild: options.esbuild ?? (await confirmESBuild()),
-      npmInstall: options.install ?? (await confirmNpmInstall())
+      npmInstall: options.install ?? (await confirmNpmInstall()),
     };
   } else {
     // Use dynamic workflow prompts
     try {
       answers = await executeWorkflowPrompts(workflowConfig, templatesConfig);
     } catch (error) {
-      console.warn(chalk.yellow(`⚠️ Workflow execution failed: ${error instanceof Error ? error.message : error}`));
+      console.warn(
+        chalk.yellow(
+          `⚠️ Workflow execution failed: ${error instanceof Error ? error.message : error}`
+        )
+      );
       console.log(chalk.gray('Falling back to default prompts...'));
-      
+
       // Fallback to original prompts
       answers = {
         template: await determineTemplate(),
         typescript: await confirmTypeScript(),
         esbuild: await confirmESBuild(),
-        npmInstall: await confirmNpmInstall()
+        npmInstall: await confirmNpmInstall(),
       };
     }
   }
 
   // Get template configuration to determine TypeScript and ESBuild settings
-  const selectedTemplateConfig = getTemplateConfig(templatesConfig, answers.template);
-  
-  const isDebug = process.env.NODE_ENV === 'development' || options.debug || options.verbose;
-  
+  const selectedTemplateConfig = getTemplateConfig(
+    templatesConfig,
+    answers.template
+  );
+
+  const isDebug =
+    process.env.NODE_ENV === 'development' || options.debug || options.verbose;
+
   if (isDebug) {
     console.log(chalk.gray('\n🔍 Debug: Template configuration'));
     console.log(chalk.gray(`  Selected template: ${answers.template}`));
     if (selectedTemplateConfig) {
-      console.log(chalk.gray(`  Template name: ${selectedTemplateConfig.name}`));
-      console.log(chalk.gray(`  Template path: ${selectedTemplateConfig.path}`));
-      console.log(chalk.gray(`  Template options: ${selectedTemplateConfig.options.join(', ')}`));
-      console.log(chalk.gray(`  TypeScript: ${selectedTemplateConfig.options.includes('ts')}`));
-      console.log(chalk.gray(`  ESBuild: ${selectedTemplateConfig.options.includes('esbuild')}`));
+      console.log(
+        chalk.gray(`  Template name: ${selectedTemplateConfig.name}`)
+      );
+      console.log(
+        chalk.gray(`  Template path: ${selectedTemplateConfig.path}`)
+      );
+      console.log(
+        chalk.gray(
+          `  Template options: ${selectedTemplateConfig.options.join(', ')}`
+        )
+      );
+      console.log(
+        chalk.gray(
+          `  TypeScript: ${selectedTemplateConfig.options.includes('ts')}`
+        )
+      );
+      console.log(
+        chalk.gray(
+          `  ESBuild: ${selectedTemplateConfig.options.includes('esbuild')}`
+        )
+      );
     } else {
-      console.log(chalk.yellow(`  ⚠️ Template config not found, using fallback`));
+      console.log(
+        chalk.yellow(`  ⚠️ Template config not found, using fallback`)
+      );
     }
   }
-  
+
   const projectConfig = {
     typescript: selectedTemplateConfig?.options.includes('ts') || false,
     esbuild: selectedTemplateConfig?.options.includes('esbuild') || false,
@@ -265,7 +309,7 @@ async function initializeProject(projectName: string, options: InitOptions) {
 
     // Get template configuration
     let templatePath: string;
-    
+
     if (selectedTemplateConfig) {
       // Use configured template path
       templatePath = selectedTemplateConfig.path;
@@ -313,7 +357,11 @@ async function initializeProject(projectName: string, options: InitOptions) {
     try {
       await executePostProcessing(workflowConfig, answers, targetDir);
     } catch (error) {
-      console.warn(chalk.yellow(`⚠️ Post-processing failed: ${error instanceof Error ? error.message : error}`));
+      console.warn(
+        chalk.yellow(
+          `⚠️ Post-processing failed: ${error instanceof Error ? error.message : error}`
+        )
+      );
     }
 
     // Print next steps with appropriate information
@@ -334,13 +382,13 @@ function printCurrentDirectoryNextSteps(
   options: { typescript: boolean; esbuild: boolean; npmInstall: boolean }
 ) {
   console.log('\n' + chalk.cyan('🎉 Next steps:'));
-  
+
   if (!options.npmInstall) {
     console.log(chalk.gray('  # Install dependencies'));
     console.log(chalk.white('  npm install'));
     console.log('');
   }
-  
+
   console.log(chalk.gray('  # Start development server'));
   if (options.esbuild) {
     console.log(chalk.white('  npm run dev'));
@@ -348,19 +396,19 @@ function printCurrentDirectoryNextSteps(
     console.log(chalk.white('  npm start'));
   }
   console.log('');
-  
+
   if (options.esbuild) {
     console.log(chalk.gray('  # Build for production'));
     console.log(chalk.white('  npm run build'));
     console.log('');
   }
-  
+
   if (options.typescript) {
     console.log(chalk.gray('  # Type check'));
     console.log(chalk.white('  npm run typecheck'));
     console.log('');
   }
-  
+
   console.log(chalk.green('Happy coding! 🚀'));
 }
 
