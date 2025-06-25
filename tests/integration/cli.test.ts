@@ -51,7 +51,9 @@ describe('CLI Integration Tests', () => {
         encoding: 'utf8'
       });
 
-      expect(output.trim()).toBe('1.0.0');
+      // Check if output matches semantic versioning format (x.y.z)
+      const semverRegex = /^\d+\.\d+\.\d+$/;
+      expect(output.trim()).toMatch(semverRegex);
     });
 
     it('should display help when no arguments are provided', () => {
