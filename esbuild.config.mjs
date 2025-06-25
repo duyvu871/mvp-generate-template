@@ -29,7 +29,8 @@ const buildOptions = {
     'fs-extra',
     'ora',
     'yaml',
-    'zod'
+    'zod',
+    'adm-zip',
   ],
 //   banner: {
 //     js: '#!/usr/bin/env node\n'
