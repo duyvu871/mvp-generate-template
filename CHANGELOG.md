@@ -17,43 +17,165 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plugin system for custom templates
 - Interactive template customization
 
-## [0.1.6] - 2024-12-25
+## [0.2.0] - 2025-06-25
 
 ### Added
-- 🎯 **Current Directory Support** - Initialize projects in current directory using `mvp-gen init .` or `mvp-gen init ./`
-  - Automatically uses current directory name as project name
-  - Smart directory validation (allows only safe files like .git, .gitignore, README.md)
-  - Customized next steps instructions for current directory initialization
-  - Enhanced help documentation with examples
+- **Configuration System**: Complete YAML workflow and JSON templates configuration support
+  - YAML workflow configuration (`mvp-gen.yml`, `.mvp-gen.yml`, `config/workflow.yml`)
+  - JSON templates configuration (`templates.json`, `.templates.json`, `config/templates.json`)
+  - Zod schema validation for all configuration files
+  - Auto-discovery of configuration files in standard locations
+
+- **Dynamic Prompts Engine**: Execute custom prompt workflows based on configuration
+  - Support for all inquirer prompt types: `list`, `confirm`, `input`, `checkbox`, `password`
+  - Conditional prompts with `when` conditions (`hasTypeScript`, `hasESBuild`, `hasDatabase`, `isExpressTemplate`)
+  - Input validation functions (`required`, `isValidProjectName`)
+  - Input filters (`trim`, `toLowerCase`, `toKebabCase`)
+  - Template auto-population from templates configuration
+
+- **Enhanced Template System**: Rich template metadata and display
+  - Template categories: `web`, `api`, `cli`, `basic`
+  - Template options: `ts`, `esbuild`, `nextjs`, `react`, `vue`, `docker`, `mongodb`, `postgresql`
+  - Template priorities for ordering
+  - Experimental and deprecated template flags
+  - Configurable template display with descriptions and options
+
+- **CLI Options**: New command-line flags for enhanced control
+  - `--config <path>`: Use specific configuration file
+  - `--workflow <path>`: Use specific workflow YAML file
+  - `--templates <path>`: Use specific templates JSON file
+  - `--debug`: Show detailed debug information
+  - `--verbose`: Show verbose output
+
+- **Post-Processing**: Execute custom scripts after template generation
+  - Custom script execution with environment variable support
+  - Git initialization and commit support
+  - Configurable package.json updates
+
+- **Debug Mode**: Comprehensive debugging capabilities
+  - Configuration discovery and loading details
+  - Template selection information
+  - Workflow execution tracing
+  - Environment variable: `NODE_ENV=development`
+
+### Changed
+- **Template Structure**: Templates now determine TypeScript/ESBuild settings automatically
+  - No separate prompts for TypeScript/ESBuild when using configured templates
+  - Template configurations override CLI prompt answers
+  - Backward compatibility maintained with fallback prompts
+
+- **Build System**: Optimized bundle size and dependencies
+  - Externalized `yaml` and `zod` dependencies in esbuild configuration
+  - Reduced bundle size from 417KB to 27KB
+  - Added debug script: `npm run start:debug`
+
+- **Template Display**: Enhanced choice formatting
+  - Category badges: `[WEB]`, `[API]`, `[CLI]`, `[BASIC]`
+  - Options display: `(TypeScript + ESBuild)`
+  - Multi-line descriptions with gray color
+  - Configurable display options: `showDescription`, `showCategory`, `showOptions`
 
 ### Fixed
-- 🔧 **Template Path Resolution** - Fixed critical issue where templates couldn't be found when using npx
-  - Improved package root detection algorithm
-  - Works correctly with npm global installs, npx, and local development
-  - Added template existence verification with clear error messages
-  - Robust fallback mechanism for different installation contexts
+- **Linting**: Resolved ESLint and TypeScript errors
+  - Fixed unused imports and variables
+  - Proper type annotations for all functions
+  - Consistent code formatting and style
 
-### Enhanced
-- 📖 **Documentation Updates**
-  - Updated CLI usage examples with current directory options
-  - Added comprehensive examples for different initialization methods
-  - Improved help text with clear usage patterns
-  - Enhanced README with new features and use cases
+- **Testing**: Updated test expectations
+  - Fixed ESBuild default value test (now defaults to `true`)
+  - Updated template directory validation for new structure
+  - All tests now passing
 
-### Technical Improvements
-- Better error handling for template resolution
-- More robust path detection across different environments
-- Improved user experience with contextual next steps
-- Enhanced code formatting and structure
+### Technical Details
+- **Dependencies**: Added `yaml@2.3.4`, `zod@3.22.4`
+- **TypeScript**: Updated to `5.3.3`
+- **ESBuild**: Updated to `0.19.9`
+- **Schema Validation**: Complete Zod schemas for all configuration types
+- **Type Safety**: Full TypeScript coverage for configuration system
 
-## [0.1.5] - 2024-12-25
+### Example Configurations
+
+#### Basic Workflow (`mvp-gen.yml`)
+```yaml
+version: "1.0.0"
+name: "Simple MVP Generator Workflow"
+description: "Basic workflow for generating MVP projects"
+
+steps:
+  - type: list
+    name: template
+    message: "Select a project template:"
+    required: false
+    pageSize: 20
+    loop: false
+    templateDisplay:
+      showDescription: true
+      showCategory: true
+      showOptions: true
+
+  - type: confirm
+    name: npmInstall
+    message: "Install dependencies automatically?"
+    default: true
+    required: false
+
+postProcess:
+  updatePackageJson: true
+  installDependencies: false
+  customScripts: []
+```
+
+#### Templates Configuration (`templates.json`)
+```json
+{
+  "version": "1.0.0",
+  "templates": [
+    {
+      "path": "ts-esbuild-express-hbs",
+      "name": "Express + Handlebars",
+      "description": "Full-stack web application with Express and Handlebars",
+      "options": ["ts", "esbuild"],
+      "category": "web",
+      "priority": 100,
+      "deprecated": false,
+      "experimental": false
+    }
+  ],
+  "defaultOptions": {
+    "typescript": true,
+    "esbuild": true,
+    "npmInstall": true
+  }
+}
+```
+
+### Migration Guide
+- Existing projects will continue to work without configuration files
+- To use new features, add `mvp-gen.yml` and/or `templates.json` to your project root
+- Templates now auto-configure TypeScript/ESBuild based on template options
+- Use `--debug` flag to troubleshoot configuration loading
+
+## [0.1.6] - 2025-06-25
+
+### Added
+- Initial project structure
+- Basic template generation
+- TypeScript and ESBuild support
+- Template variants: js/ts + default/esbuild combinations
+
+### Fixed
+- Template directory structure
+- Package.json generation
+- Dependency installation
+
+## [0.1.5] - 2025-06-25
 
 ### Fixed
 - Package configuration and build improvements
 - Repository URL normalization
 - Release workflow enhancements
 
-## [0.1.0] - 2024-12-25
+## [0.1.0] - 2025-06-25
 
 ### Added
 - 🎨 **Beautiful ASCII art welcome screen** with MVP-GEN branding and colorful display
