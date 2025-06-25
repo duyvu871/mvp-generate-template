@@ -24,19 +24,19 @@ const __dirname = path.dirname(__filename);
 function getTemplatesPath(): string {
   // When running from dist/cli.js, go up to package root
   let currentDir = __dirname;
-  
+
   // Keep going up until we find package.json or templates directory
   while (currentDir !== path.dirname(currentDir)) {
     const packageJsonPath = path.join(currentDir, 'package.json');
     const templatesDir = path.join(currentDir, 'templates');
-    
+
     if (fs.existsSync(packageJsonPath) && fs.existsSync(templatesDir)) {
       return templatesDir;
     }
-    
+
     currentDir = path.dirname(currentDir);
   }
-  
+
   // Fallback to relative path from current file
   return path.join(__dirname, '../../templates');
 }
@@ -50,17 +50,22 @@ type InitOptions = {
 export function initCommand(program: Command) {
   program
     .command('init <project-name>')
-    .description('Initialize a new project (use "." or "./" for current directory)')
+    .description(
+      'Initialize a new project (use "." or "./" for current directory)'
+    )
     .option('-t, --template <template>', 'Project template to use')
     .option('-ts, --typescript', 'Add TypeScript support')
     .option('-es, --esbuild', 'Add ESBuild configuration')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   $ mvp-gen init my-project          Create project in new directory
   $ mvp-gen init .                   Create project in current directory
   $ mvp-gen init ./                  Create project in current directory
   $ mvp-gen init my-app -t express-hbs --typescript --esbuild
-    `)
+    `
+    )
     .action(async (projectName: string, options: InitOptions) => {
       try {
         // Display welcome message
@@ -80,25 +85,35 @@ async function initializeProject(projectName: string, options: InitOptions) {
   // Handle current directory cases
   let targetDir: string;
   let actualProjectName: string;
-  
+
   if (projectName === '.' || projectName === './') {
     // Use current directory
     targetDir = process.cwd();
     actualProjectName = path.basename(targetDir);
-    
+
     // Check if current directory is empty or only has common files
     const files = await fs.readdir(targetDir);
-    const allowedFiles = ['.git', '.gitignore', 'README.md', '.DS_Store', 'Thumbs.db'];
-    const nonAllowedFiles = files.filter(file => !allowedFiles.includes(file));
-    
+    const allowedFiles = [
+      '.git',
+      '.gitignore',
+      'README.md',
+      '.DS_Store',
+      'Thumbs.db',
+    ];
+    const nonAllowedFiles = files.filter(
+      (file) => !allowedFiles.includes(file)
+    );
+
     if (nonAllowedFiles.length > 0) {
-      throw new Error(`Current directory is not empty! Found files: ${nonAllowedFiles.join(', ')}\nPlease use an empty directory or specify a new project name.`);
+      throw new Error(
+        `Current directory is not empty! Found files: ${nonAllowedFiles.join(', ')}\nPlease use an empty directory or specify a new project name.`
+      );
     }
   } else {
     // Use specified project name
     targetDir = path.resolve(process.cwd(), projectName);
     actualProjectName = projectName;
-    
+
     // Kiểm tra thư mục tồn tại
     if (await fs.pathExists(targetDir)) {
       throw new Error(`Directory "${targetDir}" already exists!`);
@@ -121,12 +136,12 @@ async function initializeProject(projectName: string, options: InitOptions) {
     // Copy template - use the new template path resolution
     const templatesDir = getTemplatesPath();
     const templatePath = path.join(templatesDir, template);
-    
+
     // Verify template exists
     if (!(await fs.pathExists(templatePath))) {
       throw new Error(`Template "${template}" not found at ${templatePath}`);
     }
-    
+
     await fs.copy(templatePath, targetDir);
 
     // Cập nhật package.json với tên project thực tế
@@ -148,7 +163,7 @@ async function initializeProject(projectName: string, options: InitOptions) {
     spinner.succeed(
       chalk.green(`Project "${actualProjectName}" created successfully!`)
     );
-    
+
     // Print next steps với thông tin phù hợp
     if (projectName === '.' || projectName === './') {
       printCurrentDirectoryNextSteps(actualProjectName, {
