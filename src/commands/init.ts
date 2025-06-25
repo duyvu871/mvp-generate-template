@@ -65,6 +65,7 @@ type InitOptions = {
   templates?: string;
   repo?: string;
   branch?: string;
+  local?: boolean;
   debug?: boolean;
   verbose?: boolean;
 };
@@ -82,27 +83,30 @@ export function initCommand(program: Command) {
     .option('-c, --config <path>', 'Use specific configuration file')
     .option('-w, --workflow <path>', 'Use specific workflow YAML file')
     .option('--templates <path>', 'Use specific templates JSON file')
-    .option(
-      '-r, --repo <url>',
-      'Git repository URL for configurations and templates'
-    )
+    .option('-r, --repo <url>', 'Git repository URL for configurations and templates')
     .option('-b, --branch <name>', 'Git branch to use (default: main)')
+    .option('-l, --local', 'Use local files first instead of Git repository (legacy mode)')
     .option('--debug', 'Show detailed debug information')
     .option('--verbose', 'Show verbose output')
     .addHelpText(
       'after',
       `
 Examples:
-  $ mvp-gen init my-project          Create project in new directory
-  $ mvp-gen init .                   Create project in current directory
+  $ mvp-gen init my-project          Create project (uses Git repo by default)
+  $ mvp-gen init . --local           Create project using local files only
   $ mvp-gen init ./                  Create project in current directory
   $ mvp-gen init my-app -t express-hbs --typescript --esbuild --install
   $ mvp-gen init . --template express-api --typescript
-  $ mvp-gen init my-project --config ./custom-config.yml
-  $ mvp-gen init my-app --workflow ./workflow.yml --templates ./templates.json
+  $ mvp-gen init my-project --workflow ./custom-workflow.yml --local
+  $ mvp-gen init my-app --workflow config/workflow.yml --templates config/templates.json
   $ mvp-gen init my-project --repo https://github.com/user/config-repo.git
   $ mvp-gen init my-app --repo https://github.com/user/repo.git --branch develop
   $ mvp-gen init my-project --debug  Show debug information
+  
+Default Behavior:
+  - Without --local: Downloads configs/templates from Git repository first
+  - With --local: Uses local files first (legacy v0.2.0 behavior)
+  - Git repository: https://github.com/duyvu871/mvp-generate-template.git
     `
     )
     .action(async (projectName: string, options: InitOptions) => {
@@ -170,15 +174,26 @@ async function initializeProject(projectName: string, options: InitOptions) {
   let workflowConfig;
   let templatesConfig;
 
-  // Load configuration files with Git support
+  const isDebug = process.env.NODE_ENV === 'development' || options.debug || options.verbose;
+
+  if (isDebug) {
+    console.log(chalk.cyan('\n🚀 MVP Generator - Git-First Configuration Loading'));
+    console.log(chalk.gray(`Mode: ${options.local ? 'Local First (Legacy)' : 'Git First (Default)'}`));
+    if (!options.local) {
+      console.log(chalk.gray(`Default Repository: https://github.com/duyvu871/mvp-generate-template.git`));
+    }
+  }
+
+  // Load configuration files with Git-first approach
   try {
     if (options.workflow || options.templates) {
       // Use specific config files
       globalConfig = await loadConfig(
-        options.workflow,
-        options.templates,
-        options.repo,
-        options.branch
+        options.workflow, 
+        options.templates, 
+        options.repo, 
+        options.branch,
+        options.local || false
       );
     } else if (options.config) {
       // Use unified config file (not implemented yet, for future)
@@ -188,33 +203,47 @@ async function initializeProject(projectName: string, options: InitOptions) {
         )
       );
       const configFiles = await findConfigFiles(
-        rootDir,
-        options.repo,
-        options.branch
+        rootDir, 
+        options.repo, 
+        options.branch, 
+        options.local || false
       );
       globalConfig = await loadConfig(
         configFiles.workflow,
         configFiles.templates,
         options.repo,
-        options.branch
+        options.branch,
+        options.local || false
       );
     } else {
-      // Auto-discover config files
+      // Auto-discover config files with Git-first approach
       const configFiles = await findConfigFiles(
-        rootDir,
-        options.repo,
-        options.branch
+        rootDir, 
+        options.repo, 
+        options.branch, 
+        options.local || false
       );
       globalConfig = await loadConfig(
         configFiles.workflow,
         configFiles.templates,
         options.repo,
-        options.branch
+        options.branch,
+        options.local || false
       );
     }
 
     workflowConfig = globalConfig.workflow;
     templatesConfig = globalConfig.templates;
+
+    if (isDebug) {
+      if (workflowConfig) {
+        console.log(chalk.green(`✅ Workflow configuration loaded successfully`));
+      }
+      if (templatesConfig) {
+        console.log(chalk.green(`✅ Templates configuration loaded successfully`));
+        console.log(chalk.gray(`   Available templates: ${templatesConfig.templates.length}`));
+      }
+    }
   } catch (error) {
     console.warn(
       chalk.yellow(
@@ -278,45 +307,24 @@ async function initializeProject(projectName: string, options: InitOptions) {
     answers.template
   );
 
-  const isDebug =
-    process.env.NODE_ENV === 'development' || options.debug || options.verbose;
-
   if (isDebug) {
     console.log(chalk.gray('\n🔍 Debug: Template configuration'));
     console.log(chalk.gray(`  Selected template: ${answers.template}`));
     if (selectedTemplateConfig) {
-      console.log(
-        chalk.gray(`  Template name: ${selectedTemplateConfig.name}`)
-      );
-      console.log(
-        chalk.gray(`  Template path: ${selectedTemplateConfig.path}`)
-      );
-      console.log(
-        chalk.gray(
-          `  Template options: ${selectedTemplateConfig.options.join(', ')}`
-        )
-      );
-      console.log(
-        chalk.gray(
-          `  TypeScript: ${selectedTemplateConfig.options.includes('ts')}`
-        )
-      );
-      console.log(
-        chalk.gray(
-          `  ESBuild: ${selectedTemplateConfig.options.includes('esbuild')}`
-        )
-      );
+      console.log(chalk.gray(`  Template name: ${selectedTemplateConfig.name}`));
+      console.log(chalk.gray(`  Template path: ${selectedTemplateConfig.path}`));
+      console.log(chalk.gray(`  Template options: ${selectedTemplateConfig.options.join(', ')}`));
+      console.log(chalk.gray(`  TypeScript: ${selectedTemplateConfig.options.includes('ts')}`));
+      console.log(chalk.gray(`  ESBuild: ${selectedTemplateConfig.options.includes('esbuild')}`));
     } else {
-      console.log(
-        chalk.yellow(`  ⚠️ Template config not found, using fallback`)
-      );
+      console.log(chalk.yellow(`  ⚠️ Template config not found, using fallback`));
     }
   }
 
   const projectConfig = {
     typescript: selectedTemplateConfig?.options.includes('ts') || false,
     esbuild: selectedTemplateConfig?.options.includes('esbuild') || false,
-    npmInstall: answers.npmInstall || false,
+    npmInstall: Boolean(answers.npmInstall),
   };
 
   if (isDebug) {
@@ -343,21 +351,25 @@ async function initializeProject(projectName: string, options: InitOptions) {
       spinner.text = `Using template: ${selectedTemplateConfig.name}`;
     } else {
       // Fallback to template name resolution
-      templatePath = getTemplateName(answers.template, projectConfig);
+      templatePath = getTemplateName(answers.template as string, projectConfig);
       spinner.text = 'Using fallback template structure...';
     }
 
-    // Try downloading from Git first if repo URL provided
-    if (options.repo) {
+    // Template loading with Git-first approach (unless --local flag is used)
+    if (!options.local) {
       try {
         spinner.text = `Downloading template from Git repository...`;
         await downloadTemplatesFromGit(
-          templatePath,
-          targetDir,
-          options.repo,
-          options.branch,
+          templatePath, 
+          targetDir, 
+          options.repo, 
+          options.branch, 
           isDebug
         );
+        
+        if (isDebug) {
+          console.log(chalk.green(`✅ Template downloaded from Git: ${templatePath}`));
+        }
       } catch (error) {
         console.warn(
           chalk.yellow(
@@ -365,38 +377,45 @@ async function initializeProject(projectName: string, options: InitOptions) {
           )
         );
         console.log(chalk.gray('Falling back to local templates...'));
-
+        
         // Fallback to local templates
         const templatesDir = getTemplatesPath();
         const fullTemplatePath = path.join(templatesDir, templatePath);
-
+        
         if (await fs.pathExists(fullTemplatePath)) {
           await fs.copy(fullTemplatePath, targetDir);
         } else {
-          throw new Error(
-            `Template "${templatePath}" not found locally or in Git repository`
-          );
+          // Try fallback template structure
+          const fallbackTemplatePath = path.join(templatesDir, answers.template as string);
+          if (await fs.pathExists(fallbackTemplatePath)) {
+            spinner.text = 'Using legacy template structure...';
+            await fs.copy(fallbackTemplatePath, targetDir);
+          } else {
+            throw new Error(`Template "${templatePath}" not found locally or in Git repository`);
+          }
         }
       }
     } else {
-      // Use local templates
+      // Use local templates first (legacy mode)
       const templatesDir = getTemplatesPath();
       const fullTemplatePath = path.join(templatesDir, templatePath);
 
-      // Verify template exists
-      if (!(await fs.pathExists(fullTemplatePath))) {
+      if (await fs.pathExists(fullTemplatePath)) {
+        await fs.copy(fullTemplatePath, targetDir);
+        if (isDebug) {
+          console.log(chalk.green(`✅ Template copied from local: ${templatePath}`));
+        }
+      } else {
         // Try fallback template structure
-        const fallbackTemplatePath = path.join(templatesDir, answers.template);
+        const fallbackTemplatePath = path.join(templatesDir, answers.template as string);
         if (await fs.pathExists(fallbackTemplatePath)) {
           spinner.text = 'Using legacy template structure...';
           await fs.copy(fallbackTemplatePath, targetDir);
         } else {
           throw new Error(
-            `Template "${templatePath}" not found at ${fullTemplatePath}\nAlso tried fallback: ${fallbackTemplatePath}\nConsider using --repo option to download from Git`
+            `Template "${templatePath}" not found locally. Try without --local flag to download from Git.`
           );
         }
-      } else {
-        await fs.copy(fullTemplatePath, targetDir);
       }
     }
 
@@ -416,7 +435,38 @@ async function initializeProject(projectName: string, options: InitOptions) {
 
     // Execute post-processing steps
     try {
-      await executePostProcessing(workflowConfig, answers, targetDir);
+      if (workflowConfig.postProcess) {
+        console.log(chalk.cyan('\n🔧 Executing post-processing steps...'));
+        
+        if (workflowConfig.postProcess.customScripts && workflowConfig.postProcess.customScripts.length > 0) {
+          const { execSync } = await import('child_process');
+          
+          for (const script of workflowConfig.postProcess.customScripts) {
+            try {
+              console.log(chalk.gray(`  Running: ${script}`));
+              execSync(script, {
+                cwd: targetDir,
+                stdio: 'inherit',
+                env: { 
+                  ...process.env, 
+                  // Convert answers to string environment variables
+                  ...Object.fromEntries(
+                    Object.entries(answers).map(([key, value]) => [
+                      key, 
+                      typeof value === 'string' ? value : String(value)
+                    ])
+                  )
+                },
+              });
+            } catch (error) {
+              console.error(chalk.red(`❌ Script failed: ${script}`));
+              throw error;
+            }
+          }
+        }
+        
+        console.log(chalk.green('✅ Post-processing completed'));
+      }
     } catch (error) {
       console.warn(
         chalk.yellow(

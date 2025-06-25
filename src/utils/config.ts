@@ -227,13 +227,201 @@ export async function loadTemplatesConfig(
 }
 
 /**
- * Load configuration from multiple sources with Git support
+ * Find configuration files with Git-first approach
+ */
+export async function findConfigFiles(
+  rootDir: string,
+  repoUrl?: string,
+  branch?: string,
+  useLocalFirst = false
+): Promise<{ workflow?: string; templates?: string }> {
+  const isDebug =
+    process.env.NODE_ENV === 'development' ||
+    process.argv.includes('--debug') ||
+    process.argv.includes('--verbose');
+
+  const configFiles = {
+    workflow: undefined as string | undefined,
+    templates: undefined as string | undefined,
+  };
+
+  if (isDebug) {
+    console.log(
+      chalk.gray(`\n🔍 Debug: Searching for config files`)
+    );
+    console.log(chalk.gray(`  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`));
+    if (repoUrl) {
+      console.log(chalk.gray(`  Repository: ${repoUrl}`));
+    }
+  }
+
+  // Configuration file paths to check
+  const workflowPaths = [
+    'mvp-gen.yml',
+    'mvp-gen.yaml',
+    '.mvp-gen.yml',
+    '.mvp-gen.yaml',
+    'config/workflow.yml',
+    'config/workflow.yaml',
+  ];
+
+  const templatesPaths = [
+    'templates.json',
+    '.templates.json',
+    'config/templates.json',
+    'templates/config.json',
+  ];
+
+  if (useLocalFirst) {
+    // Legacy behavior: Check local files first
+    if (isDebug) {
+      console.log(chalk.gray('  🏠 Checking local files first...'));
+    }
+    
+    // Check local workflow files
+    for (const workflowPath of workflowPaths) {
+      const fullPath = path.join(rootDir, workflowPath);
+      if (await fs.pathExists(fullPath)) {
+        configFiles.workflow = fullPath;
+        if (isDebug) {
+          console.log(chalk.green(`    ✓ Found local workflow: ${fullPath}`));
+        }
+        break;
+      }
+    }
+
+    // Check local templates files
+    for (const templatesPath of templatesPaths) {
+      const fullPath = path.join(rootDir, templatesPath);
+      if (await fs.pathExists(fullPath)) {
+        configFiles.templates = fullPath;
+        if (isDebug) {
+          console.log(chalk.green(`    ✓ Found local templates: ${fullPath}`));
+        }
+        break;
+      }
+    }
+
+    // Try Git as fallback if local not found
+    if ((!configFiles.workflow || !configFiles.templates) && repoUrl) {
+      if (isDebug) {
+        console.log(chalk.gray('  🌐 Falling back to Git repository...'));
+      }
+      
+      if (!configFiles.workflow) {
+        for (const workflowPath of workflowPaths) {
+          const content = await downloadFromGit(repoUrl, workflowPath, branch, isDebug);
+          if (content) {
+            configFiles.workflow = workflowPath;
+            if (isDebug) {
+              console.log(chalk.green(`    ✓ Found in Git: ${workflowPath}`));
+            }
+            break;
+          }
+        }
+      }
+
+      if (!configFiles.templates) {
+        for (const templatesPath of templatesPaths) {
+          const content = await downloadFromGit(repoUrl, templatesPath, branch, isDebug);
+          if (content) {
+            configFiles.templates = templatesPath;
+            if (isDebug) {
+              console.log(chalk.green(`    ✓ Found in Git: ${templatesPath}`));
+            }
+            break;
+          }
+        }
+      }
+    }
+  } else {
+    // New default behavior: Check Git repository first
+    const gitUrl = repoUrl || DEFAULT_CONFIG_REPO;
+    
+    if (isDebug) {
+      console.log(chalk.gray(`  🌐 Checking Git repository first: ${gitUrl}`));
+    }
+
+    // Try Git first for workflow
+    for (const workflowPath of workflowPaths) {
+      const content = await downloadFromGit(gitUrl, workflowPath, branch, isDebug);
+      if (content) {
+        configFiles.workflow = workflowPath;
+        if (isDebug) {
+          console.log(chalk.green(`    ✓ Found workflow in Git: ${workflowPath}`));
+        }
+        break;
+      }
+    }
+
+    // Try Git first for templates
+    for (const templatesPath of templatesPaths) {
+      const content = await downloadFromGit(gitUrl, templatesPath, branch, isDebug);
+      if (content) {
+        configFiles.templates = templatesPath;
+        if (isDebug) {
+          console.log(chalk.green(`    ✓ Found templates in Git: ${templatesPath}`));
+        }
+        break;
+      }
+    }
+
+    // Fallback to local files if Git failed
+    if (!configFiles.workflow || !configFiles.templates) {
+      if (isDebug) {
+        console.log(chalk.gray('  🏠 Falling back to local files...'));
+      }
+
+      if (!configFiles.workflow) {
+        for (const workflowPath of workflowPaths) {
+          const fullPath = path.join(rootDir, workflowPath);
+          if (await fs.pathExists(fullPath)) {
+            configFiles.workflow = fullPath;
+            if (isDebug) {
+              console.log(chalk.green(`    ✓ Found local workflow: ${fullPath}`));
+            }
+            break;
+          }
+        }
+      }
+
+      if (!configFiles.templates) {
+        for (const templatesPath of templatesPaths) {
+          const fullPath = path.join(rootDir, templatesPath);
+          if (await fs.pathExists(fullPath)) {
+            configFiles.templates = fullPath;
+            if (isDebug) {
+              console.log(chalk.green(`    ✓ Found local templates: ${fullPath}`));
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (isDebug) {
+    console.log(chalk.gray('\n  🎯 Final results:'));
+    console.log(
+      chalk.gray(`    Workflow: ${configFiles.workflow || 'not found'}`)
+    );
+    console.log(
+      chalk.gray(`    Templates: ${configFiles.templates || 'not found'}`)
+    );
+  }
+
+  return configFiles;
+}
+
+/**
+ * Load configuration from multiple sources with Git-first approach
  */
 export async function loadConfig(
   workflowPath?: string,
   templatesPath?: string,
   repoUrl?: string,
-  branch?: string
+  branch?: string,
+  useLocalFirst = false
 ): Promise<Config> {
   const config: Config = {};
   const isDebug =
@@ -241,10 +429,14 @@ export async function loadConfig(
     process.argv.includes('--debug') ||
     process.argv.includes('--verbose');
 
+  // Default to Git repository if no repo specified and not using local first
+  const defaultRepo = !useLocalFirst && !repoUrl ? DEFAULT_CONFIG_REPO : repoUrl;
+
   if (isDebug) {
     console.log(chalk.gray('\n🔍 Debug: Configuration loading...'));
-    if (repoUrl) {
-      console.log(chalk.gray(`  Repository: ${repoUrl}`));
+    console.log(chalk.gray(`  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`));
+    if (defaultRepo) {
+      console.log(chalk.gray(`  Repository: ${defaultRepo}`));
       console.log(chalk.gray(`  Branch: ${branch || DEFAULT_BRANCH}`));
     }
     if (workflowPath) {
@@ -258,7 +450,7 @@ export async function loadConfig(
   // Load workflow config (YAML)
   if (workflowPath) {
     try {
-      config.workflow = await loadWorkflowConfig(workflowPath, repoUrl, branch);
+      config.workflow = await loadWorkflowConfig(workflowPath, defaultRepo, branch);
       if (isDebug) {
         console.log(chalk.green(`✓ Loaded workflow config: ${workflowPath}`));
       }
@@ -274,11 +466,7 @@ export async function loadConfig(
   // Load templates config (JSON)
   if (templatesPath) {
     try {
-      config.templates = await loadTemplatesConfig(
-        templatesPath,
-        repoUrl,
-        branch
-      );
+      config.templates = await loadTemplatesConfig(templatesPath, defaultRepo, branch);
       if (isDebug) {
         console.log(chalk.green(`✓ Loaded templates config: ${templatesPath}`));
       }
@@ -298,140 +486,6 @@ export async function loadConfig(
   }
 
   return config;
-}
-
-/**
- * Find configuration files in standard locations (local and Git)
- */
-export async function findConfigFiles(
-  rootDir: string,
-  repoUrl?: string,
-  branch?: string
-): Promise<{ workflow?: string; templates?: string }> {
-  const isDebug =
-    process.env.NODE_ENV === 'development' ||
-    process.argv.includes('--debug') ||
-    process.argv.includes('--verbose');
-
-  const configFiles = {
-    workflow: undefined as string | undefined,
-    templates: undefined as string | undefined,
-  };
-
-  if (isDebug) {
-    console.log(
-      chalk.gray(`\n🔍 Debug: Searching for config files in ${rootDir}`)
-    );
-    if (repoUrl) {
-      console.log(chalk.gray(`  Also checking Git repository: ${repoUrl}`));
-    }
-  }
-
-  // Local workflow config locations (YAML)
-  const workflowPaths = [
-    'mvp-gen.yml',
-    'mvp-gen.yaml',
-    '.mvp-gen.yml',
-    '.mvp-gen.yaml',
-    'config/workflow.yml',
-    'config/workflow.yaml',
-  ];
-
-  // Local templates config locations (JSON)
-  const templatesPaths = [
-    'templates.json',
-    '.templates.json',
-    'config/templates.json',
-    'templates/config.json',
-  ];
-
-  if (isDebug) {
-    console.log(chalk.gray('  Checking local workflow paths:'));
-    workflowPaths.forEach((p) =>
-      console.log(chalk.gray(`    ${path.join(rootDir, p)}`))
-    );
-  }
-
-  // Check local workflow files first
-  for (const workflowPath of workflowPaths) {
-    const fullPath = path.join(rootDir, workflowPath);
-    if (await fs.pathExists(fullPath)) {
-      configFiles.workflow = fullPath;
-      if (isDebug) {
-        console.log(chalk.green(`    ✓ Found local: ${fullPath}`));
-      }
-      break;
-    }
-  }
-
-  // If no local workflow found and Git repo provided, try Git
-  if (!configFiles.workflow && repoUrl) {
-    for (const workflowPath of workflowPaths) {
-      const content = await downloadFromGit(
-        repoUrl,
-        workflowPath,
-        branch,
-        isDebug
-      );
-      if (content) {
-        configFiles.workflow = workflowPath;
-        if (isDebug) {
-          console.log(chalk.green(`    ✓ Found in Git: ${workflowPath}`));
-        }
-        break;
-      }
-    }
-  }
-
-  if (isDebug) {
-    console.log(chalk.gray('  Checking local templates paths:'));
-    templatesPaths.forEach((p) =>
-      console.log(chalk.gray(`    ${path.join(rootDir, p)}`))
-    );
-  }
-
-  // Check local templates files first
-  for (const templatesPath of templatesPaths) {
-    const fullPath = path.join(rootDir, templatesPath);
-    if (await fs.pathExists(fullPath)) {
-      configFiles.templates = fullPath;
-      if (isDebug) {
-        console.log(chalk.green(`    ✓ Found local: ${fullPath}`));
-      }
-      break;
-    }
-  }
-
-  // If no local templates found and Git repo provided, try Git
-  if (!configFiles.templates && repoUrl) {
-    for (const templatesPath of templatesPaths) {
-      const content = await downloadFromGit(
-        repoUrl,
-        templatesPath,
-        branch,
-        isDebug
-      );
-      if (content) {
-        configFiles.templates = templatesPath;
-        if (isDebug) {
-          console.log(chalk.green(`    ✓ Found in Git: ${templatesPath}`));
-        }
-        break;
-      }
-    }
-  }
-
-  if (isDebug) {
-    console.log(chalk.gray('\n  Discovery results:'));
-    console.log(
-      chalk.gray(`    Workflow: ${configFiles.workflow || 'not found'}`)
-    );
-    console.log(
-      chalk.gray(`    Templates: ${configFiles.templates || 'not found'}`)
-    );
-  }
-
-  return configFiles;
 }
 
 /**

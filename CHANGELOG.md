@@ -20,82 +20,133 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2025-06-25
 
 ### Added
-- **Git-Based Configuration System**: Remote configuration and template loading
-  - Load workflow configurations from Git repositories
-  - Load templates configurations from Git repositories  
-  - Download templates directly from Git repositories
+- **Git-First Configuration System**: Default Git repository integration for configurations and templates
+  - **NEW DEFAULT BEHAVIOR**: Automatically loads configurations and templates from Git repository
+  - Load workflow configurations from Git repositories by default
+  - Load templates configurations from Git repositories by default  
+  - Download templates directly from Git repositories automatically
   - Support for custom Git repository URLs with `--repo` option
   - Support for specific Git branches with `--branch` option
-  - Automatic fallback to local files when Git access fails
+  - Graceful fallback to local files when Git access fails
 
-- **Enhanced CLI Options**: Git repository integration
-  - `--repo <url>`: Git repository URL for configurations and templates
-  - `--branch <name>`: Git branch to use (default: main)
+- **Enhanced CLI Options**: Git repository integration with local override
+  - `--repo <url>`: Custom Git repository URL for configurations and templates
+  - `--branch <name>`: Specific Git branch to use (default: main)
+  - `--local`: **NEW FLAG** - Use local files first instead of Git (legacy v0.2.0 behavior)
   - Smart temporary directory management for Git operations
   - Comprehensive Git operation logging in debug mode
 
-- **Advanced Template Management**: Complete template coverage
-  - 18+ template variants with all language/build combinations
-  - Comprehensive templates configuration with full metadata
-  - Enhanced template discovery from Git repositories
-  - Graceful fallback from Git to local templates
+- **Default Git Repository**: Seamless configuration loading
+  - Default repository: `https://github.com/duyvu871/mvp-generate-template.git`
+  - Automatic configuration discovery from Git when no local files found
+  - Zero-configuration setup for new users
+  - Backward compatibility maintained with `--local` flag
 
-- **Configuration Priority System**: Intelligent configuration loading
-  - Local files checked first, then Git repository
-  - Graceful fallback when Git operations fail
-  - Comprehensive error handling and user feedback
-  - Debug logging for configuration discovery process
+- **Advanced Template Management**: Complete template coverage with Git integration
+  - 18+ template variants automatically available from Git
+  - Git-first template discovery and downloading
+  - Enhanced template resolution with intelligent fallback
+  - Local template support maintained with `--local` flag
 
-- **Repository Structure Support**: Organized configuration repositories
-  - Support for `config/` directory structure
-  - Root level configuration files
-  - Custom template directories in Git repositories
-  - Flexible path resolution for configurations
+- **Configuration Priority System**: Smart Git-first loading
+  - **Default**: Git repository → Local files → Built-in defaults
+  - **With --local**: Local files → Git repository → Built-in defaults
+  - Graceful error handling and automatic fallback
+  - Comprehensive debug logging for troubleshooting
 
 ### Changed
-- **Configuration Loading**: Enhanced with Git support
-  - All configuration functions now support Git URLs
-  - Automatic repository cloning and caching
-  - Smart pull operations for existing repositories
-  - Temporary directory cleanup management
+- **Default Behavior**: Git-first approach for all operations
+  - **BREAKING**: Default behavior now downloads from Git repository first
+  - **MIGRATION**: Use `--local` flag to maintain v0.2.0 behavior
+  - Zero-configuration experience for new users
+  - Automatic access to latest templates and configurations
 
-- **Template Discovery**: Multi-source template resolution
-  - Git repositories as primary template source
-  - Local templates as fallback option
+- **Configuration Loading**: Git repository as primary source
+  - All configuration functions use Git by default
+  - Repository cloning and caching handled automatically
+  - Local files used as fallback when Git fails
+  - Enhanced error messages with clear fallback information
+
+- **Template Discovery**: Multi-source with Git priority
+  - Git repositories checked first for templates
+  - Local templates used as fallback
   - Enhanced error messages with Git suggestions
   - Performance optimizations for Git operations
 
+- **CLI Help**: Updated examples and documentation
+  - Clear distinction between Git-first and local-first modes
+  - Examples showing both approaches
+  - Migration guidance for existing users
+  - Comprehensive usage patterns
+
 ### Technical Details
-- **Git Integration**: Native git commands for repository operations
-- **Temporary Files**: Smart temporary directory management for Git operations
-- **Error Handling**: Comprehensive Git operation error handling
-- **Performance**: Shallow clones and reusable temp directories for efficiency
+- **Git Integration**: Native git commands for seamless repository operations
+- **Temporary Files**: Optimized temporary directory management for Git operations
+- **Error Handling**: Enhanced Git operation error handling with user-friendly messages
+- **Performance**: Efficient shallow clones and repository caching
+- **Backward Compatibility**: Full support for local files with `--local` flag
 
 ### Example Usage
 
-#### Using Git Repository for Configurations
+#### New Default Behavior (Git-First)
 ```bash
-# Use default Git repository (https://github.com/duyvu871/mvp-generate-template.git)
-mvp-gen init my-project --repo https://github.com/duyvu871/mvp-generate-template.git
+# Uses Git repository by default (NEW DEFAULT)
+mvp-gen init my-project
 
-# Use custom Git repository with specific branch
-mvp-gen init my-app --repo https://github.com/user/custom-configs.git --branch develop
+# Uses Git with custom repository
+mvp-gen init my-app --repo https://github.com/user/custom-configs.git
 
-# Use specific configuration files from Git
-mvp-gen init my-project --workflow config/advanced-workflow.yml --repo https://github.com/user/configs.git
+# Uses Git with specific branch
+mvp-gen init my-project --repo https://github.com/user/configs.git --branch develop
 
 # Debug Git operations
-mvp-gen init my-app --repo https://github.com/user/configs.git --debug
+mvp-gen init my-app --debug
 ```
 
-#### Local + Git Hybrid Approach
+#### Legacy Behavior (Local-First)
 ```bash
-# Try local first, fallback to Git
-mvp-gen init my-project --repo https://github.com/user/configs.git
+# Use local files first (v0.2.0 behavior)
+mvp-gen init my-project --local
 
-# Use local workflow, Git templates
-mvp-gen init my-app --workflow ./local-workflow.yml --repo https://github.com/user/templates.git
+# Local workflow with Git templates
+mvp-gen init my-app --workflow ./local-workflow.yml
+
+# Specify local configuration files explicitly
+mvp-gen init my-project --workflow ./config/workflow.yml --templates ./config/templates.json --local
 ```
+
+#### Hybrid Approaches
+```bash
+# Git configs, local templates
+mvp-gen init my-project --templates ./local-templates.json
+
+# Specific Git configurations
+mvp-gen init my-app --workflow config/advanced-workflow.yml --repo https://github.com/user/configs.git
+```
+
+### Migration Guide for 0.3.0
+
+#### For Existing Users (v0.2.0)
+- **No breaking changes**: Your existing local configurations will continue to work
+- **New behavior**: Add `--local` flag to maintain exact v0.2.0 behavior
+- **Benefit**: Access to latest templates and configurations from Git automatically
+
+#### Migration Commands
+```bash
+# v0.2.0 behavior
+mvp-gen init my-project
+
+# v0.3.0 equivalent (maintains local-first)
+mvp-gen init my-project --local
+
+# v0.3.0 new default (Git-first)
+mvp-gen init my-project
+```
+
+#### For New Users
+- **Zero setup**: Just run `mvp-gen init my-project` for automatic Git integration
+- **Latest templates**: Always get the most up-to-date templates and configurations
+- **No configuration needed**: Default repository provides comprehensive setup
 
 ### Repository Structure for Git-Based Configurations
 ```
@@ -112,12 +163,11 @@ your-config-repo/
 └── templates.json           # Root level templates config
 ```
 
-### Migration Guide for 0.3.0
-- **Existing Projects**: Continue to work without any changes
-- **New Git Features**: Add `--repo` option to download templates and configurations from Git
-- **Configuration Files**: Can be stored locally or in Git repositories
-- **Templates**: Available locally and from Git repositories with automatic fallback
-- **Debug Mode**: Use `--debug` flag to troubleshoot Git operations and configuration loading
+### Performance Improvements
+- **Smart Caching**: Git repositories cached for subsequent uses
+- **Shallow Clones**: Minimal Git operations for faster downloads
+- **Fallback Logic**: Intelligent fallback prevents failures
+- **Debug Mode**: Comprehensive logging for troubleshooting
 
 ## [0.2.0] - 2025-06-25
 
