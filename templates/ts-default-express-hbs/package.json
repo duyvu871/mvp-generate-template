@@ -1,0 +1,31 @@
+{
+  "name": "ts-default-express-hbs",
+  "version": "1.0.0",
+  "description": "Express + Handlebars web application with TypeScript",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-handlebars": "^7.1.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/express": "^4.17.17",
+    "@types/cors": "^2.8.13"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "keywords": ["template", "mvp", "express", "handlebars", "typescript", "web"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,28 @@
+version: "1.0.0"
+name: "Simple MVP Generator Workflow"
+description: "Basic workflow for generating MVP projects"
+
+steps:
+  - type: list
+    name: template
+    message: "Select a project template:"
+    required: false
+    pageSize: 20
+    loop: false
+    templateDisplay:
+      showDescription: true
+      showCategory: true
+      showOptions: true
+      maxWidth: 200
+      separator: " - "
+
+  - type: confirm
+    name: npmInstall
+    message: "Install dependencies automatically?"
+    default: true
+    required: false
+
+postProcess:
+  updatePackageJson: true
+  installDependencies: false
+  customScripts: [] 

@@ -1,0 +1,129 @@
+const express = require('express');
+const { engine } = require('express-handlebars');
+const path = require('path');
+const cors = require('cors');
+const helmet = require('helmet');
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Handlebars configuration
+app.engine('handlebars', engine({
+  defaultLayout: 'main',
+  layoutsDir: path.join(__dirname, '../views/layouts'),
+  partialsDir: path.join(__dirname, '../views/partials'),
+  helpers: {
+    eq: (a, b) => a === b,
+    formatDate: (date) => date.toLocaleDateString(),
+    json: (obj) => JSON.stringify(obj)
+  }
+}));
+app.set('view engine', 'handlebars');
+app.set('views', path.join(__dirname, '../views'));
+
+// Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Sample data
+const users = [
+  { id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date('2024-01-15') },
+  { id: 2, name: 'Jane Smith', email: 'jane@example.com', createdAt: new Date('2024-02-20') },
+  { id: 3, name: 'Bob Johnson', email: 'bob@example.com', createdAt: new Date('2024-03-10') }
+];
+
+// Routes
+app.get('/', (req, res) => {
+  res.render('home', {
+    title: 'Welcome to JavaScript Express App',
+    message: 'This is a full-stack web application built with Express and Handlebars!',
+    users: users,
+    buildInfo: {
+      language: 'JavaScript',
+      buildTool: 'Node.js',
+      viewEngine: 'Handlebars'
+    }
+  });
+});
+
+app.get('/users', (req, res) => {
+  res.render('users', {
+    title: 'Users List',
+    users: users,
+    totalUsers: users.length
+  });
+});
+
+app.get('/users/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const user = users.find(u => u.id === id);
+  
+  if (!user) {
+    return res.status(404).render('404', {
+      title: 'User Not Found',
+      message: `User with ID ${id} was not found.`
+    });
+  }
+  
+  res.render('user-detail', {
+    title: `User: ${user.name}`,
+    user: user
+  });
+});
+
+app.get('/about', (req, res) => {
+  res.render('about', {
+    title: 'About This App',
+    technologies: [
+      { name: 'Node.js', description: 'JavaScript runtime' },
+      { name: 'Express.js', description: 'Web framework' },
+      { name: 'JavaScript', description: 'Programming language' },
+      { name: 'Handlebars', description: 'Template engine' }
+    ]
+  });
+});
+
+// API endpoints
+app.get('/api/users', (req, res) => {
+  res.json({
+    success: true,
+    data: users,
+    count: users.length
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).render('404', {
+    title: 'Page Not Found',
+    message: `The page "${req.originalUrl}" was not found.`
+  });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(500).render('error', {
+    title: 'Server Error',
+    message: 'Something went wrong on our end.',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
+});
+
+app.listen(port, () => {
+  console.log(`🚀 JavaScript Express Server running on port ${port}`);
+  console.log(`📍 Open your browser: http://localhost:${port}`);
+  console.log(`🔧 Built with: JavaScript + Express + Handlebars`);
+});

@@ -47,8 +47,20 @@ export async function confirmESBuild(): Promise<boolean> {
       type: 'confirm',
       name: 'useESBuild',
       message: 'Add ESBuild for fast compilation?',
-      default: false,
+      default: true,
     },
   ]);
   return useESBuild;
+}
+
+export async function confirmNpmInstall(): Promise<boolean> {
+  const { npmInstall } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'npmInstall',
+      message: 'Install dependencies automatically?',
+      default: true,
+    },
+  ]);
+  return npmInstall;
 }

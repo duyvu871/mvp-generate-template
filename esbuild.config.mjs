@@ -27,7 +27,9 @@ const buildOptions = {
     'chalk',
     'commander',
     'fs-extra',
-    'ora'
+    'ora',
+    'yaml',
+    'zod'
   ],
 //   banner: {
 //     js: '#!/usr/bin/env node\n'

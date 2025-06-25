@@ -1,0 +1,52 @@
+<div class="hero-section">
+    <h1>{{title}}</h1>
+    <p class="hero-message">{{message}}</p>
+    
+    <div class="build-info">
+        <h3>Built With:</h3>
+        <ul>
+            <li><strong>Language:</strong> {{buildInfo.language}}</li>
+            <li><strong>Runtime:</strong> {{buildInfo.buildTool}}</li>
+            <li><strong>View Engine:</strong> {{buildInfo.viewEngine}}</li>
+        </ul>
+    </div>
+</div>
+
+<div class="users-preview">
+    <h2>Recent Users</h2>
+    <div class="users-grid">
+        {{#each users}}
+        <div class="user-card">
+            <h3>{{this.name}}</h3>
+            <p>{{this.email}}</p>
+            <p class="user-date">Joined: {{formatDate this.createdAt}}</p>
+            <a href="/users/{{this.id}}" class="btn">View Profile</a>
+        </div>
+        {{/each}}
+    </div>
+    <div class="text-center">
+        <a href="/users" class="btn btn-primary">View All Users</a>
+    </div>
+</div>
+
+<div class="features">
+    <h2>Features</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <h3>🚀 Quick Setup</h3>
+            <p>Simple JavaScript setup with no complex build tools</p>
+        </div>
+        <div class="feature-card">
+            <h3>📦 Express.js</h3>
+            <p>Powerful and flexible Node.js web framework</p>
+        </div>
+        <div class="feature-card">
+            <h3>🎨 Handlebars</h3>
+            <p>Clean templating with server-side rendering</p>
+        </div>
+        <div class="feature-card">
+            <h3>⚡ Fast Development</h3>
+            <p>Hot reloading with nodemon for instant feedback</p>
+        </div>
+    </div>
+</div>

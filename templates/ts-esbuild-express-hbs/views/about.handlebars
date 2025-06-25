@@ -1,0 +1,37 @@
+<div class="page-header">
+    <h1>{{title}}</h1>
+</div>
+
+<div class="about-content">
+    <p>This is a modern web application built with cutting-edge technologies for optimal performance and developer experience.</p>
+    
+    <h2>Technologies Used</h2>
+    <div class="tech-list">
+        {{#each technologies}}
+        <div class="tech-item">
+            <h3>{{this.name}}</h3>
+            <p>{{this.description}}</p>
+        </div>
+        {{/each}}
+    </div>
+    
+    <h2>Key Features</h2>
+    <ul class="features-list">
+        <li>⚡ Lightning-fast builds with ESBuild</li>
+        <li>🔧 Type-safe development with TypeScript</li>
+        <li>🎨 Server-side rendering with Handlebars</li>
+        <li>📱 Responsive design</li>
+        <li>🔒 Security headers and CORS protection</li>
+        <li>🚀 Modern ES6+ JavaScript features</li>
+        <li>📦 Optimized production builds</li>
+    </ul>
+    
+    <h2>Get Started</h2>
+    <p>To get started with this template:</p>
+    <ol>
+        <li>Clone or download the template</li>
+        <li>Run <code>npm install</code> to install dependencies</li>
+        <li>Run <code>npm run dev</code> for development</li>
+        <li>Run <code>npm run build</code> for production builds</li>
+    </ol>
+</div>

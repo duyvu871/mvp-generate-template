@@ -1,0 +1,26 @@
+<div class="page-header">
+    <h1>{{title}}</h1>
+    <p>Total Users: {{totalUsers}}</p>
+</div>
+
+<div class="users-list">
+    {{#each users}}
+    <div class="user-item">
+        <div class="user-info">
+            <h3>{{this.name}}</h3>
+            <p class="user-email">{{this.email}}</p>
+            <p class="user-date">Member since: {{formatDate this.createdAt}}</p>
+        </div>
+        <div class="user-actions">
+            <a href="/users/{{this.id}}" class="btn">View Profile</a>
+        </div>
+    </div>
+    {{/each}}
+</div>
+
+{{#unless users}}
+<div class="empty-state">
+    <h3>No users found</h3>
+    <p>There are currently no users in the system.</p>
+</div>
+{{/unless}}

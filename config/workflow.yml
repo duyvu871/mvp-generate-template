@@ -1,0 +1,94 @@
+version: "1.0.0"
+name: "Advanced MVP Generator Workflow"
+description: "Configurable workflow for generating MVP projects with dynamic steps"
+
+steps:
+  - type: input
+    name: projectName
+    message: "What is your project name?"
+    validate: isValidProjectName
+    filter: toKebabCase
+    required: true
+
+  - type: list
+    name: template
+    message: "Select a project template:"
+    required: true
+    pageSize: 10
+    loop: false
+    templateDisplay:
+      showDescription: true
+      showCategory: true
+      showOptions: true
+      maxWidth: 200
+      separator: " | "
+    # Choices will be loaded from templates.json
+
+  - type: confirm
+    name: typescript
+    message: "Add TypeScript support?"
+    default: true
+    required: false
+
+  - type: confirm
+    name: esbuild
+    message: "Add ESBuild for fast compilation?"
+    default: true
+    when: hasTypeScript
+    required: false
+
+  - type: checkbox
+    name: features
+    message: "Select additional features:"
+    choices:
+      - name: "Docker support"
+        value: docker
+        description: "Add Docker configuration files"
+      - name: "Database integration"
+        value: database
+        description: "Add database setup (MongoDB/PostgreSQL)"
+      - name: "Testing setup"
+        value: testing
+        description: "Add Jest/Vitest testing configuration"
+      - name: "CI/CD pipeline"
+        value: cicd
+        description: "Add GitHub Actions workflow"
+      - name: "Documentation"
+        value: docs
+        description: "Add documentation templates"
+    required: false
+
+  - type: list
+    name: database
+    message: "Choose database type:"
+    when: hasDatabase
+    choices:
+      - name: "MongoDB"
+        value: mongodb
+      - name: "PostgreSQL"
+        value: postgresql
+      - name: "MySQL"
+        value: mysql
+      - name: "SQLite"
+        value: sqlite
+    required: false
+
+  - type: confirm
+    name: npmInstall
+    message: "Install dependencies automatically?"
+    default: true
+    required: false
+
+  - type: confirm
+    name: gitInit
+    message: "Initialize Git repository?"
+    default: true
+    required: false
+
+postProcess:
+  updatePackageJson: true
+  installDependencies: false
+  customScripts:
+    - "git init"
+    - "git add ."
+    - "git commit -m 'Initial commit'" 

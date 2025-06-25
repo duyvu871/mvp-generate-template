@@ -1,0 +1,26 @@
+{
+  "name": "project-name",
+  "version": "1.0.0",
+  "description": "A full-stack web application with Express and Handlebars",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-handlebars": "^7.1.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "keywords": ["template", "mvp", "express", "handlebars", "web"],
+  "author": "",
+  "license": "MIT"
+}

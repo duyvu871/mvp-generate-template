@@ -1,0 +1,180 @@
+{
+  "version": "1.0.0",
+  "templates": [
+    {
+      "path": "ts-esbuild-express-hbs",
+      "name": "Express + Handlebars (TypeScript + ESBuild)",
+      "description": "Full-stack web application with Express, Handlebars, TypeScript, and ESBuild",
+      "options": ["ts", "esbuild"],
+      "category": "web",
+      "priority": 100,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "js-esbuild-express-hbs",
+      "name": "Express + Handlebars (JavaScript + ESBuild)",
+      "description": "Full-stack web application with Express, Handlebars, and ESBuild",
+      "options": ["esbuild"],
+      "category": "web",
+      "priority": 97,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "ts-default-express-hbs",
+      "name": "Express + Handlebars (TypeScript)",
+      "description": "Full-stack web application with Express, Handlebars, and TypeScript",
+      "options": ["ts"],
+      "category": "web",
+      "priority": 93,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "js-default-express-hbs",
+      "name": "Express + Handlebars (JavaScript)",
+      "description": "Full-stack web application with Express and Handlebars",
+      "options": [],
+      "category": "web",
+      "priority": 95,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "ts-esbuild-express-api",
+      "name": "Express API (TypeScript + ESBuild)",
+      "description": "RESTful API server with Express, TypeScript, and ESBuild",
+      "options": ["ts", "esbuild"],
+      "category": "api",
+      "priority": 90,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "ts-default-express-api",
+      "name": "Express API (TypeScript)",
+      "description": "RESTful API server with Express and TypeScript",
+      "options": ["ts"],
+      "category": "api",
+      "priority": 88,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "js-esbuild-express-api",
+      "name": "Express API (JavaScript + ESBuild)",
+      "description": "RESTful API server with Express and ESBuild",
+      "options": ["esbuild"],
+      "category": "api",
+      "priority": 87,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "js-default-express-api",
+      "name": "Express API (JavaScript)",
+      "description": "RESTful API server with Express",
+      "options": [],
+      "category": "api",
+      "priority": 85,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "ts-esbuild-nextjs",
+      "name": "Next.js (TypeScript + ESBuild)",
+      "description": "React framework with TypeScript and ESBuild",
+      "options": ["ts", "esbuild", "nextjs", "react"],
+      "category": "web",
+      "priority": 80,
+      "deprecated": false,
+      "experimental": true
+    },
+    {
+      "path": "ts-default-node-cli",
+      "name": "Node.js CLI Tool (TypeScript)",
+      "description": "Command-line application with TypeScript",
+      "options": ["ts"],
+      "category": "cli",
+      "priority": 75,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "js-esbuild-node-cli",
+      "name": "Node.js CLI Tool (JavaScript + ESBuild)",
+      "description": "Command-line application with JavaScript and ESBuild",
+      "options": ["esbuild"],
+      "category": "cli",
+      "priority": 72,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "js-default-node-cli",
+      "name": "Node.js CLI Tool (JavaScript)",
+      "description": "Command-line application with JavaScript",
+      "options": [],
+      "category": "cli",
+      "priority": 70,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "ts-esbuild-basic-node",
+      "name": "Basic Node.js (TypeScript + ESBuild)",
+      "description": "Minimal Node.js project with TypeScript and ESBuild",
+      "options": ["ts", "esbuild"],
+      "category": "basic",
+      "priority": 68,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "ts-default-basic-node",
+      "name": "Basic Node.js (TypeScript)",
+      "description": "Minimal Node.js project with TypeScript",
+      "options": ["ts"],
+      "category": "basic",
+      "priority": 65,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "js-esbuild-basic-node",
+      "name": "Basic Node.js (JavaScript + ESBuild)",
+      "description": "Minimal Node.js project with JavaScript and ESBuild",
+      "options": ["esbuild"],
+      "category": "basic",
+      "priority": 62,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "js-default-basic-node",
+      "name": "Basic Node.js (JavaScript)",
+      "description": "Minimal Node.js project",
+      "options": [],
+      "category": "basic",
+      "priority": 60,
+      "deprecated": false,
+      "experimental": false
+    },
+    {
+      "path": "express-hbs",
+      "name": "Express + Handlebars (Legacy)",
+      "description": "Legacy template for backward compatibility",
+      "options": ["ts", "esbuild"],
+      "category": "legacy",
+      "priority": 10,
+      "deprecated": true,
+      "experimental": false
+    }
+  ],
+  "defaultOptions": {
+    "typescript": true,
+    "esbuild": true,
+    "npmInstall": true
+  }
+} 
