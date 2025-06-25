@@ -73,8 +73,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./mvp-generate-template-${{ steps.version.outputs.VERSION }}.tgz
-        asset_name: mvp-generate-template-${{ steps.version.outputs.VERSION }}.tgz
+        asset_path: ./ssit-hub-mvp-generate-template-${{ steps.version.outputs.VERSION }}.tgz
+        asset_name: ssit-hub-mvp-generate-template-${{ steps.version.outputs.VERSION }}.tgz
         asset_content_type: application/gzip
 
   npm-publish:
