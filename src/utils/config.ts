@@ -5,7 +5,6 @@ import chalk from 'chalk';
 import { execSync } from 'child_process';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import AdmZip from 'adm-zip';
 import {
   WorkflowConfigSchema,
   TemplatesConfigSchema,
@@ -985,7 +984,8 @@ export async function downloadTemplateFilesFromGitHub(
       // Ensure target directory exists
       await fs.ensureDir(targetDir);
 
-      // Extract zip file using adm-zip
+      // Extract zip file using adm-zip (dynamic import to avoid ESBuild issues)
+      const AdmZip = (await import('adm-zip')).default;
       const zip = new AdmZip(tempZipFile);
       zip.extractAllTo(targetDir, true); // true = overwrite
 

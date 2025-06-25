@@ -2,7 +2,6 @@
 
 import fs from 'fs-extra';
 import path from 'path';
-import AdmZip from 'adm-zip';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -55,7 +54,8 @@ async function packageTemplates() {
     const zipFilePath = path.join(templatesDir, zipFileName);
 
     try {
-      // Create zip archive using adm-zip
+      // Create zip archive using adm-zip (dynamic import)
+      const AdmZip = (await import('adm-zip')).default;
       const zip = new AdmZip();
       
       // Recursively add all files and folders from template directory
