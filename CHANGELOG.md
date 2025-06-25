@@ -17,6 +17,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plugin system for custom templates
 - Interactive template customization
 
+## [0.1.6] - 2024-12-25
+
+### Added
+- 🎯 **Current Directory Support** - Initialize projects in current directory using `mvp-gen init .` or `mvp-gen init ./`
+  - Automatically uses current directory name as project name
+  - Smart directory validation (allows only safe files like .git, .gitignore, README.md)
+  - Customized next steps instructions for current directory initialization
+  - Enhanced help documentation with examples
+
+### Fixed
+- 🔧 **Template Path Resolution** - Fixed critical issue where templates couldn't be found when using npx
+  - Improved package root detection algorithm
+  - Works correctly with npm global installs, npx, and local development
+  - Added template existence verification with clear error messages
+  - Robust fallback mechanism for different installation contexts
+
+### Enhanced
+- 📖 **Documentation Updates**
+  - Updated CLI usage examples with current directory options
+  - Added comprehensive examples for different initialization methods
+  - Improved help text with clear usage patterns
+  - Enhanced README with new features and use cases
+
+### Technical Improvements
+- Better error handling for template resolution
+- More robust path detection across different environments
+- Improved user experience with contextual next steps
+- Enhanced code formatting and structure
+
+## [0.1.5] - 2024-12-25
+
+### Fixed
+- Package configuration and build improvements
+- Repository URL normalization
+- Release workflow enhancements
+
 ## [0.1.0] - 2024-12-25
 
 ### Added
@@ -100,15 +136,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.1.6**: Current directory support and template path fixes
+- **v0.1.5**: Package configuration and workflow improvements  
 - **v0.1.0**: Initial release with core functionality and 4 templates
 
 ## Migration Guide
 
-### New Installation (v0.1.0)
-This is the first release. Install globally:
+### New Installation (v0.1.6)
+Install the latest version globally:
 ```bash
 npm install -g @ssit-hub/mvp-generate-template
 ```
+
+### Migration from v0.1.5
+Update to the latest version:
+```bash
+npm update -g @ssit-hub/mvp-generate-template
+```
+
+### New Features Available
+- Use `mvp-gen init .` to create projects in current directory
+- Improved template resolution for npx usage
 
 ## Upcoming Features (v0.2.0)
 
