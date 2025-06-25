@@ -1,7 +1,7 @@
 # 🚀 MVP Template Generator
 
-[![npm version](https://badge.fury.io/js/@ssit%2Fmvp-generate-template.svg)](https://badge.fury.io/js/@ssit/mvp-generate-template)
-[![downloads](https://img.shields.io/npm/dm/@ssit/mvp-generate-template.svg)](https://npmjs.org/package/@ssit/mvp-generate-template)
+[![npm version](https://badge.fury.io/js/@ssit-hub%2Fmvp-generate-template.svg)](https://badge.fury.io/js/@ssit-hub/mvp-generate-template)
+[![downloads](https://img.shields.io/npm/dm/@ssit-hub/mvp-generate-template.svg)](https://npmjs.org/package/@ssit-hub/mvp-generate-template)
 [![CI](https://github.com/duyvu871/mvp-generate-template/workflows/CI/badge.svg)](https://github.com/duyvu871/mvp-generate-template/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -26,10 +26,10 @@ Generate production-ready projects in seconds with interactive prompts, TypeScri
 
 ```bash
 # Install globally (recommended)
-npm install -g @ssit/mvp-generate-template
+npm install -g @ssit-hub/mvp-generate-template
 
 # Or use with npx (no installation required)
-npx @ssit/mvp-generate-template init my-project
+npx @ssit-hub/mvp-generate-template init my-project
 ```
 
 ## 🚀 Quick Start
@@ -139,7 +139,7 @@ mvp-gen init my-api --template express-api --typescript
 
 ### Create a CLI Tool
 ```bash
-npx @ssit/mvp-generate-template init my-cli-tool --template node-cli
+npx @ssit-hub/mvp-generate-template init my-cli-tool --template node-cli
 ```
 
 ## 🔧 Generated Project Structure
@@ -189,7 +189,7 @@ npm run format     # Format code
 Keep your global installation up to date:
 
 ```bash
-npm update -g @ssit/mvp-generate-template
+npm update -g @ssit-hub/mvp-generate-template
 
 # Check current version
 mvp-gen --version
@@ -213,7 +213,7 @@ MIT © [Bùi An Du](https://github.com/duyvu871)
 
 ## 🔗 Links
 
-- [npm package](https://www.npmjs.com/package/@ssit/mvp-generate-template)
+- [npm package](https://www.npmjs.com/package/@ssit-hub/mvp-generate-template)
 - [GitHub repository](https://github.com/duyvu871/mvp-generate-template)
 - [Report issues](https://github.com/duyvu871/mvp-generate-template/issues)
 - [Changelog](CHANGELOG.md)
