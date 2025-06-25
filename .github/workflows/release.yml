@@ -39,6 +39,7 @@ jobs:
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
     - name: Create GitHub Release
+      id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,7 +54,7 @@ jobs:
           ## Installation
           
           ```bash
-          npm install -g mvp-generate-template@${{ steps.version.outputs.VERSION }}
+          npm install -g @ssit-hub/mvp-generate-template@${{ steps.version.outputs.VERSION }}
           ```
           
           ## Usage
