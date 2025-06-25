@@ -92,32 +92,49 @@ async function executePromptStep(
       templatesConfig,
       step.templateDisplay
     );
-    
+
     // Debug: Check for duplicates
-    const isDebug = process.env.NODE_ENV === 'development' || 
-      process.argv.includes('--debug') || 
+    const isDebug =
+      process.env.NODE_ENV === 'development' ||
+      process.argv.includes('--debug') ||
       process.argv.includes('--verbose');
-      
+
     if (isDebug) {
       console.log(chalk.gray(`\n🔍 Debug: Template choices generation`));
-      console.log(chalk.gray(`  Total templates in config: ${templatesConfig.templates.length}`));
+      console.log(
+        chalk.gray(
+          `  Total templates in config: ${templatesConfig.templates.length}`
+        )
+      );
       console.log(chalk.gray(`  Generated choices: ${templateChoices.length}`));
-      
+
       // Check for duplicate values
-      const values = templateChoices.map(choice => choice.value);
+      const values = templateChoices.map((choice) => choice.value);
       const uniqueValues = [...new Set(values)];
       if (values.length !== uniqueValues.length) {
-        console.log(chalk.yellow(`  ⚠️ Found ${values.length - uniqueValues.length} duplicate choices!`));
-        const duplicates = values.filter((value, index) => values.indexOf(value) !== index);
+        console.log(
+          chalk.yellow(
+            `  ⚠️ Found ${values.length - uniqueValues.length} duplicate choices!`
+          )
+        );
+        const duplicates = values.filter(
+          (value, index) => values.indexOf(value) !== index
+        );
         console.log(chalk.yellow(`  Duplicates: ${duplicates.join(', ')}`));
       }
     }
-    
+
     promptConfig.choices = templateChoices;
-  } else if (step.choices && (step.type === 'list' || step.type === 'checkbox')) {
+  } else if (
+    step.choices &&
+    (step.type === 'list' || step.type === 'checkbox')
+  ) {
     // Use static choices from workflow step
     promptConfig.choices = step.choices;
-  } else if (step.name === 'template' && (step.type === 'list' || step.type === 'checkbox')) {
+  } else if (
+    step.name === 'template' &&
+    (step.type === 'list' || step.type === 'checkbox')
+  ) {
     // Template step without templates config and without static choices
     throw new Error(
       'Template step requires either static choices in workflow config or templates configuration to be loaded'
