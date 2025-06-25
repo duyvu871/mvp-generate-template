@@ -35,8 +35,11 @@ npx @ssit-hub/mvp-generate-template init my-project
 ## 🚀 Quick Start
 
 ```bash
-# Create a new project
+# Create a new project in a new directory
 mvp-gen init my-awesome-project
+
+# Or create in current directory
+mvp-gen init .
 
 # Follow the interactive prompts to:
 # 1. Choose your template
@@ -76,14 +79,21 @@ Minimal Node.js project
 
 ## 🎯 CLI Usage
 
-### Basic Command
+### Basic Commands
 ```bash
+# Create project in new directory
 mvp-gen init <project-name>
+
+# Create project in current directory
+mvp-gen init .
+# or
+mvp-gen init ./
 ```
 
 ### With Options
 ```bash
 mvp-gen init my-project --template express-hbs --typescript --esbuild
+mvp-gen init . --template express-api --typescript
 ```
 
 ### Available Options
@@ -135,6 +145,12 @@ mvp-gen init my-webapp
 ### Create an API Server
 ```bash
 mvp-gen init my-api --template express-api --typescript
+```
+
+### Create in Current Directory
+```bash
+mkdir my-new-project && cd my-new-project
+mvp-gen init . --template express-hbs --typescript --esbuild
 ```
 
 ### Create a CLI Tool
