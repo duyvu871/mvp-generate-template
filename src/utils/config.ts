@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { execSync } from 'child_process';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import AdmZip from 'adm-zip';
 import {
   WorkflowConfigSchema,
   TemplatesConfigSchema,
@@ -913,7 +914,7 @@ export function createDefaultTemplatesConfig(): TemplatesConfig {
 }
 
 /**
- * Download specific template files from GitHub repository using raw API
+ * Download template zip file from GitHub repository and extract it using adm-zip
  */
 export async function downloadTemplateFilesFromGitHub(
   templatePath: string,
@@ -934,96 +935,77 @@ export async function downloadTemplateFilesFromGitHub(
     if (debug) {
       console.log(
         chalk.gray(
-          `🌐 Downloading template files from GitHub raw: ${repoUrl}/templates/${templatePath}`
+          `🌐 Downloading template zip from GitHub: ${repoUrl}/templates/${templatePath}.zip`
         )
       );
     }
 
-    // Get list of files to download from templates config
-    const templatesConfigPath = 'config/templates.json';
-    const templatesConfigContent = await downloadFromGitHubRaw(
-      repoUrl,
-      templatesConfigPath,
-      branch,
-      debug
-    );
+    // Download the zip file using GitHub raw API
+    const zipFilePath = `templates/${templatePath}.zip`;
+    const rawUrl = convertToGitHubRawUrl(repoUrl, zipFilePath, branch);
 
-    if (!templatesConfigContent) {
-      throw new Error(
-        `Templates configuration not found: ${templatesConfigPath}`
-      );
+    if (!rawUrl) {
+      throw new Error(`Failed to convert to GitHub raw URL: ${repoUrl}`);
     }
-
-    const templatesConfig = JSON.parse(templatesConfigContent);
-    const template = templatesConfig.templates.find(
-      (t: any) => t.path === templatePath || t.name === templatePath
-    );
-
-    if (!template) {
-      throw new Error(
-        `Template "${templatePath}" not found in templates configuration`
-      );
-    }
-
-    // Define common template files to download
-    const templateFiles = [
-      'package.json',
-      'README.md',
-      'src/index.js',
-      'src/index.ts',
-      '.gitignore',
-      '.env.example',
-      'tsconfig.json',
-      'esbuild.js',
-      'Dockerfile',
-      'docker-compose.yml',
-    ];
-
-    // Ensure target directory exists
-    await fs.ensureDir(targetDir);
-
-    // Download files in parallel
-    const downloadPromises = templateFiles.map(async (fileName) => {
-      const filePath = `templates/${templatePath}/${fileName}`;
-      const content = await downloadFromGitHubRaw(
-        repoUrl,
-        filePath,
-        branch,
-        false // Don't show individual file debug messages
-      );
-
-      if (content) {
-        const targetFile = path.join(targetDir, fileName);
-        await fs.ensureDir(path.dirname(targetFile));
-        await fs.writeFile(targetFile, content, 'utf-8');
-
-        if (debug) {
-          console.log(chalk.green(`✓ Downloaded: ${fileName}`));
-        }
-        return { fileName, success: true };
-      } else {
-        if (debug) {
-          console.log(chalk.gray(`⚠️ Skipped (not found): ${fileName}`));
-        }
-        return { fileName, success: false };
-      }
-    });
-
-    const results = await Promise.all(downloadPromises);
-    const successCount = results.filter((r) => r.success).length;
 
     if (debug) {
-      console.log(
-        chalk.green(
-          `✅ Template download complete: ${successCount}/${templateFiles.length} files`
-        )
-      );
+      console.log(chalk.gray(`📡 Fetching: ${rawUrl}`));
     }
 
-    if (successCount === 0) {
-      throw new Error(
-        `No template files found for "${templatePath}" in repository`
+    // Create temporary file for the zip content
+    const tempZipFile = path.join(
+      os.tmpdir(),
+      `mvp-template-${Date.now()}.zip`
+    );
+
+    try {
+      // Download zip file directly using curl
+      execSync(`curl -L -s -f "${rawUrl}" -o "${tempZipFile}"`, {
+        stdio: debug ? 'inherit' : 'pipe',
+        timeout: 60000, // 60 second timeout for larger files
+      });
+
+      // Verify zip file was downloaded
+      if (!(await fs.pathExists(tempZipFile))) {
+        throw new Error(
+          `Template zip file not found: ${zipFilePath}\n` +
+            `Make sure the template exists and has been packaged with 'npm run package-templates'`
+        );
+      }
+
+      const zipStats = await fs.stat(tempZipFile);
+      if (debug) {
+        console.log(
+          chalk.gray(
+            `💾 Downloaded zip: ${(zipStats.size / 1024).toFixed(1)} KB`
+          )
+        );
+      }
+
+      // Ensure target directory exists
+      await fs.ensureDir(targetDir);
+
+      // Extract zip file using adm-zip
+      const zip = new AdmZip(tempZipFile);
+      zip.extractAllTo(targetDir, true); // true = overwrite
+
+      if (debug) {
+        const entries = zip.getEntries();
+        console.log(
+          chalk.gray(`📦 Extracted ${entries.length} files to: ${targetDir}`)
+        );
+      }
+
+      console.log(
+        chalk.green(
+          `✅ Template '${templatePath}' downloaded and extracted successfully`
+        )
       );
+    } finally {
+      // Clean up temporary zip file
+      if (await fs.pathExists(tempZipFile)) {
+        await fs.remove(tempZipFile);
+      }
     }
   } catch (error) {
     if (debug) {

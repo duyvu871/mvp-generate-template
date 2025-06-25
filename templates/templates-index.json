@@ -1,0 +1,254 @@
+{
+  "version": "1.0.0",
+  "packagedAt": "2025-06-25T21:14:02.410Z",
+  "templates": [
+    {
+      "path": "ts-esbuild-express-hbs",
+      "name": "Express + Handlebars (TypeScript + ESBuild)",
+      "description": "Full-stack web application with Express, Handlebars templating, TypeScript, and ESBuild for ultra-fast compilation",
+      "options": [
+        "ts",
+        "esbuild"
+      ],
+      "category": "web",
+      "priority": 100,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "ts-esbuild-express-hbs.zip",
+      "downloadUrl": "templates/ts-esbuild-express-hbs.zip"
+    },
+    {
+      "path": "js-esbuild-express-hbs",
+      "name": "Express + Handlebars (JavaScript + ESBuild)",
+      "description": "Full-stack web application with Express, Handlebars templating, and ESBuild for fast compilation",
+      "options": [
+        "esbuild"
+      ],
+      "category": "web",
+      "priority": 95,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "js-esbuild-express-hbs.zip",
+      "downloadUrl": "templates/js-esbuild-express-hbs.zip"
+    },
+    {
+      "path": "ts-default-express-hbs",
+      "name": "Express + Handlebars (TypeScript)",
+      "description": "Full-stack web application with Express, Handlebars templating, and TypeScript",
+      "options": [
+        "ts"
+      ],
+      "category": "web",
+      "priority": 90,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "ts-default-express-hbs.zip",
+      "downloadUrl": "templates/ts-default-express-hbs.zip"
+    },
+    {
+      "path": "js-default-express-hbs",
+      "name": "Express + Handlebars (JavaScript)",
+      "description": "Full-stack web application with Express and Handlebars templating",
+      "options": [],
+      "category": "web",
+      "priority": 85,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "js-default-express-hbs.zip",
+      "downloadUrl": "templates/js-default-express-hbs.zip"
+    },
+    {
+      "path": "ts-esbuild-express-api",
+      "name": "Express API (TypeScript + ESBuild)",
+      "description": "RESTful API server with Express, TypeScript, and ESBuild for rapid development",
+      "options": [
+        "ts",
+        "esbuild"
+      ],
+      "category": "api",
+      "priority": 80,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "ts-esbuild-express-api.zip",
+      "downloadUrl": "templates/ts-esbuild-express-api.zip"
+    },
+    {
+      "path": "js-esbuild-express-api",
+      "name": "Express API (JavaScript + ESBuild)",
+      "description": "RESTful API server with Express and ESBuild for fast compilation",
+      "options": [
+        "esbuild"
+      ],
+      "category": "api",
+      "priority": 75,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "js-esbuild-express-api.zip",
+      "downloadUrl": "templates/js-esbuild-express-api.zip"
+    },
+    {
+      "path": "ts-default-express-api",
+      "name": "Express API (TypeScript)",
+      "description": "RESTful API server with Express and TypeScript",
+      "options": [
+        "ts"
+      ],
+      "category": "api",
+      "priority": 70,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "ts-default-express-api.zip",
+      "downloadUrl": "templates/ts-default-express-api.zip"
+    },
+    {
+      "path": "js-default-express-api",
+      "name": "Express API (JavaScript)",
+      "description": "RESTful API server with Express",
+      "options": [],
+      "category": "api",
+      "priority": 65,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "js-default-express-api.zip",
+      "downloadUrl": "templates/js-default-express-api.zip"
+    },
+    {
+      "path": "ts-esbuild-node-cli",
+      "name": "Node.js CLI Tool (TypeScript + ESBuild)",
+      "description": "Command-line application template with TypeScript and ESBuild for professional CLI development",
+      "options": [
+        "ts",
+        "esbuild"
+      ],
+      "category": "cli",
+      "priority": 60,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "ts-esbuild-node-cli.zip",
+      "downloadUrl": "templates/ts-esbuild-node-cli.zip"
+    },
+    {
+      "path": "js-esbuild-node-cli",
+      "name": "Node.js CLI Tool (JavaScript + ESBuild)",
+      "description": "Command-line application template with ESBuild for fast development",
+      "options": [
+        "esbuild"
+      ],
+      "category": "cli",
+      "priority": 55,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "js-esbuild-node-cli.zip",
+      "downloadUrl": "templates/js-esbuild-node-cli.zip"
+    },
+    {
+      "path": "ts-default-node-cli",
+      "name": "Node.js CLI Tool (TypeScript)",
+      "description": "Command-line application template with TypeScript",
+      "options": [
+        "ts"
+      ],
+      "category": "cli",
+      "priority": 50,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "ts-default-node-cli.zip",
+      "downloadUrl": "templates/ts-default-node-cli.zip"
+    },
+    {
+      "path": "js-default-node-cli",
+      "name": "Node.js CLI Tool (JavaScript)",
+      "description": "Command-line application template",
+      "options": [],
+      "category": "cli",
+      "priority": 45,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "js-default-node-cli.zip",
+      "downloadUrl": "templates/js-default-node-cli.zip"
+    },
+    {
+      "path": "ts-esbuild-basic-node",
+      "name": "Basic Node.js (TypeScript + ESBuild)",
+      "description": "Minimal Node.js project with TypeScript and ESBuild setup",
+      "options": [
+        "ts",
+        "esbuild"
+      ],
+      "category": "basic",
+      "priority": 40,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "ts-esbuild-basic-node.zip",
+      "downloadUrl": "templates/ts-esbuild-basic-node.zip"
+    },
+    {
+      "path": "js-esbuild-basic-node",
+      "name": "Basic Node.js (JavaScript + ESBuild)",
+      "description": "Minimal Node.js project with ESBuild setup",
+      "options": [
+        "esbuild"
+      ],
+      "category": "basic",
+      "priority": 35,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "js-esbuild-basic-node.zip",
+      "downloadUrl": "templates/js-esbuild-basic-node.zip"
+    },
+    {
+      "path": "ts-default-basic-node",
+      "name": "Basic Node.js (TypeScript)",
+      "description": "Minimal Node.js project with TypeScript",
+      "options": [
+        "ts"
+      ],
+      "category": "basic",
+      "priority": 30,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "ts-default-basic-node.zip",
+      "downloadUrl": "templates/ts-default-basic-node.zip"
+    },
+    {
+      "path": "js-default-basic-node",
+      "name": "Basic Node.js (JavaScript)",
+      "description": "Minimal Node.js project",
+      "options": [],
+      "category": "basic",
+      "priority": 25,
+      "deprecated": false,
+      "experimental": false,
+      "zipFile": "js-default-basic-node.zip",
+      "downloadUrl": "templates/js-default-basic-node.zip"
+    },
+    {
+      "path": "ts-default-nextjs-14",
+      "name": "Next.js 14 (TypeScript)",
+      "description": "Modern Next.js 14 application with TypeScript and App Router",
+      "options": [
+        "ts",
+        "nextjs",
+        "react"
+      ],
+      "category": "web",
+      "priority": 105,
+      "deprecated": false,
+      "experimental": true,
+      "zipFile": "ts-default-nextjs-14.zip",
+      "downloadUrl": "templates/ts-default-nextjs-14.zip"
+    },
+    {
+      "path": "express-hbs",
+      "name": "Express + Handlebars (Legacy)",
+      "description": "Legacy Express + Handlebars template for backward compatibility",
+      "options": [],
+      "category": "web",
+      "priority": 10,
+      "deprecated": true,
+      "experimental": false,
+      "zipFile": "express-hbs.zip",
+      "downloadUrl": "templates/express-hbs.zip"
+    }
+  ]
+}
