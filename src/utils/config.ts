@@ -246,10 +246,12 @@ export async function findConfigFiles(
   };
 
   if (isDebug) {
+    console.log(chalk.gray(`\n🔍 Debug: Searching for config files`));
     console.log(
-      chalk.gray(`\n🔍 Debug: Searching for config files`)
+      chalk.gray(
+        `  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`
+      )
     );
-    console.log(chalk.gray(`  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`));
     if (repoUrl) {
       console.log(chalk.gray(`  Repository: ${repoUrl}`));
     }
@@ -277,7 +279,7 @@ export async function findConfigFiles(
     if (isDebug) {
       console.log(chalk.gray('  🏠 Checking local files first...'));
     }
-    
+
     // Check local workflow files
     for (const workflowPath of workflowPaths) {
       const fullPath = path.join(rootDir, workflowPath);
@@ -307,10 +309,15 @@ export async function findConfigFiles(
       if (isDebug) {
         console.log(chalk.gray('  🌐 Falling back to Git repository...'));
       }
-      
+
       if (!configFiles.workflow) {
         for (const workflowPath of workflowPaths) {
-          const content = await downloadFromGit(repoUrl, workflowPath, branch, isDebug);
+          const content = await downloadFromGit(
+            repoUrl,
+            workflowPath,
+            branch,
+            isDebug
+          );
           if (content) {
             configFiles.workflow = workflowPath;
             if (isDebug) {
@@ -323,7 +330,12 @@ export async function findConfigFiles(
 
       if (!configFiles.templates) {
         for (const templatesPath of templatesPaths) {
-          const content = await downloadFromGit(repoUrl, templatesPath, branch, isDebug);
+          const content = await downloadFromGit(
+            repoUrl,
+            templatesPath,
+            branch,
+            isDebug
+          );
           if (content) {
             configFiles.templates = templatesPath;
             if (isDebug) {
@@ -337,18 +349,25 @@ export async function findConfigFiles(
   } else {
     // New default behavior: Check Git repository first
     const gitUrl = repoUrl || DEFAULT_CONFIG_REPO;
-    
+
     if (isDebug) {
       console.log(chalk.gray(`  🌐 Checking Git repository first: ${gitUrl}`));
     }
 
     // Try Git first for workflow
     for (const workflowPath of workflowPaths) {
-      const content = await downloadFromGit(gitUrl, workflowPath, branch, isDebug);
+      const content = await downloadFromGit(
+        gitUrl,
+        workflowPath,
+        branch,
+        isDebug
+      );
       if (content) {
         configFiles.workflow = workflowPath;
         if (isDebug) {
-          console.log(chalk.green(`    ✓ Found workflow in Git: ${workflowPath}`));
+          console.log(
+            chalk.green(`    ✓ Found workflow in Git: ${workflowPath}`)
+          );
         }
         break;
       }
@@ -356,11 +375,18 @@ export async function findConfigFiles(
 
     // Try Git first for templates
     for (const templatesPath of templatesPaths) {
-      const content = await downloadFromGit(gitUrl, templatesPath, branch, isDebug);
+      const content = await downloadFromGit(
+        gitUrl,
+        templatesPath,
+        branch,
+        isDebug
+      );
       if (content) {
         configFiles.templates = templatesPath;
         if (isDebug) {
-          console.log(chalk.green(`    ✓ Found templates in Git: ${templatesPath}`));
+          console.log(
+            chalk.green(`    ✓ Found templates in Git: ${templatesPath}`)
+          );
         }
         break;
       }
@@ -378,7 +404,9 @@ export async function findConfigFiles(
           if (await fs.pathExists(fullPath)) {
             configFiles.workflow = fullPath;
             if (isDebug) {
-              console.log(chalk.green(`    ✓ Found local workflow: ${fullPath}`));
+              console.log(
+                chalk.green(`    ✓ Found local workflow: ${fullPath}`)
+              );
             }
             break;
           }
@@ -391,7 +419,9 @@ export async function findConfigFiles(
           if (await fs.pathExists(fullPath)) {
             configFiles.templates = fullPath;
             if (isDebug) {
-              console.log(chalk.green(`    ✓ Found local templates: ${fullPath}`));
+              console.log(
+                chalk.green(`    ✓ Found local templates: ${fullPath}`)
+              );
             }
             break;
           }
@@ -430,11 +460,16 @@ export async function loadConfig(
     process.argv.includes('--verbose');
 
   // Default to Git repository if no repo specified and not using local first
-  const defaultRepo = !useLocalFirst && !repoUrl ? DEFAULT_CONFIG_REPO : repoUrl;
+  const defaultRepo =
+    !useLocalFirst && !repoUrl ? DEFAULT_CONFIG_REPO : repoUrl;
 
   if (isDebug) {
     console.log(chalk.gray('\n🔍 Debug: Configuration loading...'));
-    console.log(chalk.gray(`  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`));
+    console.log(
+      chalk.gray(
+        `  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`
+      )
+    );
     if (defaultRepo) {
       console.log(chalk.gray(`  Repository: ${defaultRepo}`));
       console.log(chalk.gray(`  Branch: ${branch || DEFAULT_BRANCH}`));
@@ -450,7 +485,11 @@ export async function loadConfig(
   // Load workflow config (YAML)
   if (workflowPath) {
     try {
-      config.workflow = await loadWorkflowConfig(workflowPath, defaultRepo, branch);
+      config.workflow = await loadWorkflowConfig(
+        workflowPath,
+        defaultRepo,
+        branch
+      );
       if (isDebug) {
         console.log(chalk.green(`✓ Loaded workflow config: ${workflowPath}`));
       }
@@ -466,7 +505,11 @@ export async function loadConfig(
   // Load templates config (JSON)
   if (templatesPath) {
     try {
-      config.templates = await loadTemplatesConfig(templatesPath, defaultRepo, branch);
+      config.templates = await loadTemplatesConfig(
+        templatesPath,
+        defaultRepo,
+        branch
+      );
       if (isDebug) {
         console.log(chalk.green(`✓ Loaded templates config: ${templatesPath}`));
       }
