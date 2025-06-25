@@ -12,7 +12,7 @@
     "build:prod": "NODE_ENV=production node esbuild.config.mjs",
     "dev": "node esbuild.config.mjs --dev",
     "start": "node dist/cli.js",
-    "clean": "rimraf dist",
+    "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -38,17 +38,14 @@
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^9.0.7",
     "esbuild": "^0.19.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.50.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-import": "^2.28.0",
-    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^5.0.0",
     "prettier": "^3.0.0",
     "vitest": "^0.34.0",
-    "@vitest/coverage-v8": "^0.34.0",
-    "rimraf": "^5.0.0"
+    "@vitest/coverage-v8": "^0.34.0"
   },
   "engines": {
     "node": ">=16.0.0"
