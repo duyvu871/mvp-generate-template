@@ -42,21 +42,18 @@ export function cacheCommand(program: Command) {
 
         console.log(chalk.gray('\nCache types:'));
         console.log(
-          chalk.gray('  • Git repositories (configurations and templates)')
+          chalk.gray('  • Legacy Git repositories (from previous versions)')
         );
-        console.log(chalk.gray('  • Configuration files (YAML/JSON)'));
-        console.log(chalk.gray('  • Template files'));
+        console.log(chalk.gray('  • Old configuration files (YAML/JSON)'));
+        console.log(chalk.gray('  • Previous template files'));
 
         console.log(chalk.cyan('\n💡 Cache Management:'));
-        console.log(chalk.gray('  mvp-gen cache clean    # Clean all cache'));
         console.log(
-          chalk.gray(
-            '  mvp-gen init --no-cache # Disable cache for one command'
-          )
+          chalk.gray('  mvp-gen cache clean    # Clean legacy cache')
         );
         console.log(
           chalk.gray(
-            '  mvp-gen init --direct-fetch # Fetch directly without cache'
+            '  Note: v0.3.0+ uses direct GitHub raw downloads (no cache needed)'
           )
         );
       } catch (error) {

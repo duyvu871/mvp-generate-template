@@ -4,6 +4,7 @@ import * as YAML from 'yaml';
 import chalk from 'chalk';
 import { execSync } from 'child_process';
 import os from 'os';
+import { fileURLToPath } from 'url';
 import {
   WorkflowConfigSchema,
   TemplatesConfigSchema,
@@ -19,10 +20,64 @@ import {
   convertToGitHubRawUrl,
 } from './github-raw.js';
 
-// Default Git repository for configurations and templates
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * Get package.json information
+ */
+export function getPackageInfo(): {
+  repository?: { url: string; branch?: string };
+  defaultRepo?: string;
+  defaultBranch?: string;
+} {
+  try {
+    // Find package.json from current directory or parent directories
+    let currentDir = path.dirname(path.dirname(__dirname)); // Go up from src/utils to project root
+
+    while (currentDir !== path.dirname(currentDir)) {
+      const packageJsonPath = path.join(currentDir, 'package.json');
+      if (fs.existsSync(packageJsonPath)) {
+        const packageJson = JSON.parse(
+          fs.readFileSync(packageJsonPath, 'utf-8')
+        );
+
+        if (packageJson.repository) {
+          const repo = packageJson.repository;
+          const repoUrl = typeof repo === 'string' ? repo : repo.url;
+          const branch = typeof repo === 'object' ? repo.branch : 'main';
+
+          return {
+            repository: { url: repoUrl, branch },
+            defaultRepo: repoUrl,
+            defaultBranch: branch || 'main',
+          };
+        }
+        break;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+
+    // Fallback if no package.json found
+    return {
+      defaultRepo: 'https://github.com/duyvu871/mvp-generate-template.git',
+      defaultBranch: 'main',
+    };
+  } catch (error) {
+    // Fallback on error
+    return {
+      defaultRepo: 'https://github.com/duyvu871/mvp-generate-template.git',
+      defaultBranch: 'main',
+    };
+  }
+}
+
+// Get package info on module load
+const packageInfo = getPackageInfo();
 const DEFAULT_CONFIG_REPO =
+  packageInfo.defaultRepo ||
   'https://github.com/duyvu871/mvp-generate-template.git';
-const DEFAULT_BRANCH = 'main';
+const DEFAULT_BRANCH = packageInfo.defaultBranch || 'main';
 
 /**
  * Get appropriate cache directory for the platform
@@ -67,7 +122,7 @@ function getNpmCacheDirectory(): string | null {
 }
 
 /**
- * Get the best cache directory available
+ * Get the best cache directory available (kept for cache management commands)
  */
 function getOptimalCacheDirectory(): string {
   // Try npm cache first, fallback to OS cache
@@ -76,189 +131,6 @@ function getOptimalCacheDirectory(): string {
     return npmCache;
   }
   return getCacheDirectory();
-}
-
-/**
- * Download file content directly from Git repository without local caching
- */
-async function downloadContentFromGit(
-  repoUrl: string,
-  filePath: string,
-  branch = DEFAULT_BRANCH,
-  debug = false
-): Promise<string | null> {
-  try {
-    if (debug) {
-      console.log(
-        chalk.gray(
-          `🌐 Fetching content directly from repository: ${repoUrl}/${filePath}`
-        )
-      );
-    }
-
-    // Primary strategy: GitHub raw API using curl (fastest and most reliable)
-    if (isGitHubRepository(repoUrl)) {
-      const content = await downloadFromGitHubRaw(
-        repoUrl,
-        filePath,
-        branch,
-        debug
-      );
-      if (content) {
-        return content;
-      }
-
-      if (debug) {
-        console.log(chalk.yellow(`⚠️ GitHub raw API failed for: ${filePath}`));
-      }
-    }
-
-    // For non-GitHub repositories, return error with helpful message
-    if (!isGitHubRepository(repoUrl)) {
-      throw new Error(
-        `Direct fetch only supports GitHub repositories.\n` +
-          `Repository: ${repoUrl}\n` +
-          `Use caching mode instead (remove --direct-fetch flag)`
-      );
-    }
-
-    // If we reach here, it means GitHub raw API failed
-    throw new Error(
-      `Failed to fetch from GitHub raw API.\n` +
-        `File: ${filePath}\n` +
-        `Repository: ${repoUrl}\n` +
-        `Branch: ${branch}\n` +
-        `This might be a private repository or the file doesn't exist.`
-    );
-  } catch (error) {
-    if (debug) {
-      console.error(
-        chalk.red(
-          `❌ Direct Git fetch failed: ${error instanceof Error ? error.message : error}`
-        )
-      );
-    }
-    return null;
-  }
-}
-
-/**
- * Download file from Git repository with caching support
- */
-async function downloadFromGit(
-  repoUrl: string,
-  filePath: string,
-  branch = DEFAULT_BRANCH,
-  debug = false,
-  useCache = true,
-  directFetch = false
-): Promise<string | null> {
-  // If direct fetch is requested, get content without caching
-  if (directFetch) {
-    return await downloadContentFromGit(repoUrl, filePath, branch, debug);
-  }
-
-  try {
-    const cacheDir = useCache
-      ? getOptimalCacheDirectory()
-      : path.join(os.tmpdir(), 'mvp-generate-template');
-    const repoHash = Buffer.from(repoUrl).toString('base64').slice(0, 16);
-    const tempDir = path.join(cacheDir, `repo-${repoHash}`);
-
-    if (debug) {
-      console.log(
-        chalk.gray(`🌐 Downloading from Git: ${repoUrl}/${filePath}`)
-      );
-      console.log(chalk.gray(`📁 Cache directory: ${tempDir}`));
-    }
-
-    // Ensure cache directory exists
-    await fs.ensureDir(cacheDir);
-
-    // Clone or pull repository to cache
-    if (await fs.pathExists(tempDir)) {
-      if (debug) {
-        console.log(chalk.gray(`📁 Using cached repository: ${tempDir}`));
-      }
-      try {
-        execSync(`git pull origin ${branch}`, {
-          cwd: tempDir,
-          stdio: debug ? 'inherit' : 'pipe',
-        });
-      } catch (pullError) {
-        if (debug) {
-          console.log(chalk.yellow(`⚠️ Git pull failed, using cached version`));
-        }
-      }
-    } else {
-      if (debug) {
-        console.log(chalk.gray(`📦 Cloning repository to cache: ${tempDir}`));
-      }
-
-      try {
-        execSync(
-          `git clone --depth 1 --branch ${branch} ${repoUrl} ${tempDir}`,
-          {
-            stdio: debug ? 'inherit' : 'pipe',
-          }
-        );
-      } catch (cloneError) {
-        if (debug) {
-          console.error(
-            chalk.red(
-              `❌ Git clone failed: ${cloneError instanceof Error ? cloneError.message : cloneError}`
-            )
-          );
-        }
-
-        // For SSH URLs or private repos, provide helpful error message
-        if (
-          repoUrl.startsWith('git@') ||
-          (cloneError instanceof Error &&
-            cloneError.message.includes('Permission denied'))
-        ) {
-          const httpsUrl = repoUrl.replace(
-            /^git@github\.com:/,
-            'https://github.com/'
-          );
-          throw new Error(
-            `Git clone failed for SSH URL: ${repoUrl}\n\n` +
-              `Solutions:\n` +
-              `1. Use HTTPS URL instead: ${httpsUrl}\n` +
-              `2. Configure SSH keys: ssh-add ~/.ssh/id_rsa\n` +
-              `3. For private repos, use local files with --local flag\n` +
-              `4. Use --direct-fetch for public GitHub repos (uses raw.githubusercontent.com)`
-          );
-        }
-
-        throw cloneError;
-      }
-    }
-
-    const fullPath = path.join(tempDir, filePath);
-
-    if (await fs.pathExists(fullPath)) {
-      const content = await fs.readFile(fullPath, 'utf-8');
-      if (debug) {
-        console.log(chalk.green(`✓ Downloaded: ${filePath}`));
-      }
-      return content;
-    } else {
-      if (debug) {
-        console.log(chalk.yellow(`⚠️ File not found: ${filePath}`));
-      }
-      return null;
-    }
-  } catch (error) {
-    if (debug) {
-      console.error(
-        chalk.red(
-          `❌ Git download failed: ${error instanceof Error ? error.message : error}`
-        )
-      );
-    }
-    return null;
-  }
 }
 
 /**
@@ -356,25 +228,32 @@ export async function loadWorkflowConfig(
       if (isDebug) {
         console.log(
           chalk.gray(
-            `🌐 Loading workflow config from Git: ${gitUrl}/${gitPath}`
+            `🌐 Loading workflow config from GitHub raw: ${gitUrl}/${gitPath}`
           )
         );
       }
 
-      const content = await downloadFromGit(
-        gitUrl,
-        gitPath,
-        branch,
-        isDebug,
-        options.useCache ?? true,
-        options.directFetch ?? false
-      );
-      if (!content) {
+      // Use direct GitHub raw download
+      if (isGitHubRepository(gitUrl)) {
+        const content = await downloadFromGitHubRaw(
+          gitUrl,
+          gitPath,
+          branch || DEFAULT_BRANCH,
+          isDebug
+        );
+        if (!content) {
+          throw new Error(
+            `Configuration file not found in GitHub repository: ${gitPath}`
+          );
+        }
+        fileContent = content;
+      } else {
         throw new Error(
-          `Configuration file not found in Git repository: ${gitPath}`
+          `Only GitHub repositories are supported for remote config loading.\n` +
+            `Repository: ${gitUrl}\n` +
+            `Use local files instead.`
         );
       }
-      fileContent = content;
     } else {
       // Local file
       if (!(await fs.pathExists(configPath))) {
@@ -436,25 +315,32 @@ export async function loadTemplatesConfig(
       if (isDebug) {
         console.log(
           chalk.gray(
-            `🌐 Loading templates config from Git: ${gitUrl}/${gitPath}`
+            `🌐 Loading templates config from GitHub raw: ${gitUrl}/${gitPath}`
           )
         );
       }
 
-      const content = await downloadFromGit(
-        gitUrl,
-        gitPath,
-        branch,
-        isDebug,
-        options.useCache ?? true,
-        options.directFetch ?? false
-      );
-      if (!content) {
+      // Use direct GitHub raw download
+      if (isGitHubRepository(gitUrl)) {
+        const content = await downloadFromGitHubRaw(
+          gitUrl,
+          gitPath,
+          branch || DEFAULT_BRANCH,
+          isDebug
+        );
+        if (!content) {
+          throw new Error(
+            `Templates configuration file not found in GitHub repository: ${gitPath}`
+          );
+        }
+        fileContent = content;
+      } else {
         throw new Error(
-          `Templates configuration file not found in Git repository: ${gitPath}`
+          `Only GitHub repositories are supported for remote config loading.\n` +
+            `Repository: ${gitUrl}\n` +
+            `Use local files instead.`
         );
       }
-      fileContent = content;
     } else {
       // Local file
       if (!(await fs.pathExists(configPath))) {
@@ -490,7 +376,7 @@ export async function loadTemplatesConfig(
 }
 
 /**
- * Find configuration files with Git-first approach
+ * Find configuration files with Git-first approach using direct GitHub raw downloads
  */
 export async function findConfigFiles(
   rootDir: string,
@@ -513,12 +399,7 @@ export async function findConfigFiles(
     console.log(chalk.gray(`\n🔍 Debug: Searching for config files`));
     console.log(
       chalk.gray(
-        `  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`
-      )
-    );
-    console.log(
-      chalk.gray(
-        `  Cache mode: ${options.directFetch ? 'Direct fetch (no cache)' : options.useCache !== false ? 'Cache enabled' : 'Cache disabled'}`
+        `  Strategy: ${useLocalFirst ? 'Local first' : 'Git-first via raw downloads (default)'}`
       )
     );
     if (repoUrl) {
@@ -573,26 +454,30 @@ export async function findConfigFiles(
       }
     }
 
-    // Try Git as fallback if local not found
-    if ((!configFiles.workflow || !configFiles.templates) && repoUrl) {
+    // Try GitHub raw as fallback if local not found
+    if (
+      (!configFiles.workflow || !configFiles.templates) &&
+      repoUrl &&
+      isGitHubRepository(repoUrl)
+    ) {
       if (isDebug) {
-        console.log(chalk.gray('  🌐 Falling back to Git repository...'));
+        console.log(chalk.gray('  🌐 Falling back to GitHub raw downloads...'));
       }
 
       if (!configFiles.workflow) {
         for (const workflowPath of workflowPaths) {
-          const content = await downloadFromGit(
+          const content = await downloadFromGitHubRaw(
             repoUrl,
             workflowPath,
-            branch,
-            isDebug,
-            options.useCache ?? true,
-            options.directFetch ?? false
+            branch || DEFAULT_BRANCH,
+            isDebug
           );
           if (content) {
             configFiles.workflow = workflowPath;
             if (isDebug) {
-              console.log(chalk.green(`    ✓ Found in Git: ${workflowPath}`));
+              console.log(
+                chalk.green(`    ✓ Found in GitHub raw: ${workflowPath}`)
+              );
             }
             break;
           }
@@ -601,18 +486,18 @@ export async function findConfigFiles(
 
       if (!configFiles.templates) {
         for (const templatesPath of templatesPaths) {
-          const content = await downloadFromGit(
+          const content = await downloadFromGitHubRaw(
             repoUrl,
             templatesPath,
-            branch,
-            isDebug,
-            options.useCache ?? true,
-            options.directFetch ?? false
+            branch || DEFAULT_BRANCH,
+            isDebug
           );
           if (content) {
             configFiles.templates = templatesPath;
             if (isDebug) {
-              console.log(chalk.green(`    ✓ Found in Git: ${templatesPath}`));
+              console.log(
+                chalk.green(`    ✓ Found in GitHub raw: ${templatesPath}`)
+              );
             }
             break;
           }
@@ -620,56 +505,56 @@ export async function findConfigFiles(
       }
     }
   } else {
-    // New default behavior: Check Git repository first
+    // New default behavior: Check GitHub raw first for GitHub repos
     const gitUrl = repoUrl || DEFAULT_CONFIG_REPO;
 
-    if (isDebug) {
-      console.log(chalk.gray(`  🌐 Checking Git repository first: ${gitUrl}`));
-    }
+    if (isGitHubRepository(gitUrl)) {
+      if (isDebug) {
+        console.log(chalk.gray(`  🌐 Checking GitHub raw first: ${gitUrl}`));
+      }
 
-    // Try Git first for workflow
-    for (const workflowPath of workflowPaths) {
-      const content = await downloadFromGit(
-        gitUrl,
-        workflowPath,
-        branch,
-        isDebug,
-        options.useCache ?? true,
-        options.directFetch ?? false
-      );
-      if (content) {
-        configFiles.workflow = workflowPath;
-        if (isDebug) {
-          console.log(
-            chalk.green(`    ✓ Found workflow in Git: ${workflowPath}`)
-          );
+      // Try GitHub raw first for workflow
+      for (const workflowPath of workflowPaths) {
+        const content = await downloadFromGitHubRaw(
+          gitUrl,
+          workflowPath,
+          branch || DEFAULT_BRANCH,
+          isDebug
+        );
+        if (content) {
+          configFiles.workflow = workflowPath;
+          if (isDebug) {
+            console.log(
+              chalk.green(`    ✓ Found workflow in GitHub raw: ${workflowPath}`)
+            );
+          }
+          break;
         }
-        break;
+      }
+
+      // Try GitHub raw first for templates
+      for (const templatesPath of templatesPaths) {
+        const content = await downloadFromGitHubRaw(
+          gitUrl,
+          templatesPath,
+          branch || DEFAULT_BRANCH,
+          isDebug
+        );
+        if (content) {
+          configFiles.templates = templatesPath;
+          if (isDebug) {
+            console.log(
+              chalk.green(
+                `    ✓ Found templates in GitHub raw: ${templatesPath}`
+              )
+            );
+          }
+          break;
+        }
       }
     }
 
-    // Try Git first for templates
-    for (const templatesPath of templatesPaths) {
-      const content = await downloadFromGit(
-        gitUrl,
-        templatesPath,
-        branch,
-        isDebug,
-        options.useCache ?? true,
-        options.directFetch ?? false
-      );
-      if (content) {
-        configFiles.templates = templatesPath;
-        if (isDebug) {
-          console.log(
-            chalk.green(`    ✓ Found templates in Git: ${templatesPath}`)
-          );
-        }
-        break;
-      }
-    }
-
-    // Fallback to local files if Git failed
+    // Fallback to local files if GitHub raw failed
     if (!configFiles.workflow || !configFiles.templates) {
       if (isDebug) {
         console.log(chalk.gray('  🏠 Falling back to local files...'));
@@ -721,15 +606,14 @@ export async function findConfigFiles(
 }
 
 /**
- * Load configuration from multiple sources with Git-first approach
+ * Load configuration from multiple sources with Git-first approach using direct downloads
  */
 export async function loadConfig(
   workflowPath?: string,
   templatesPath?: string,
   repoUrl?: string,
   branch?: string,
-  useLocalFirst = false,
-  options: { useCache?: boolean; directFetch?: boolean } = {}
+  useLocalFirst = false
 ): Promise<Config> {
   const config: Config = {};
   const isDebug =
@@ -745,12 +629,7 @@ export async function loadConfig(
     console.log(chalk.gray('\n🔍 Debug: Configuration loading...'));
     console.log(
       chalk.gray(
-        `  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`
-      )
-    );
-    console.log(
-      chalk.gray(
-        `  Cache mode: ${options.directFetch ? 'Direct fetch (no cache)' : options.useCache !== false ? 'Cache enabled' : 'Cache disabled'}`
+        `  Strategy: ${useLocalFirst ? 'Local first' : 'GitHub raw downloads (default)'}`
       )
     );
     if (defaultRepo) {
@@ -771,8 +650,7 @@ export async function loadConfig(
       config.workflow = await loadWorkflowConfig(
         workflowPath,
         defaultRepo,
-        branch,
-        options
+        branch
       );
       if (isDebug) {
         console.log(chalk.green(`✓ Loaded workflow config: ${workflowPath}`));
@@ -792,8 +670,7 @@ export async function loadConfig(
       config.templates = await loadTemplatesConfig(
         templatesPath,
         defaultRepo,
-        branch,
-        options
+        branch
       );
       if (isDebug) {
         console.log(chalk.green(`✓ Loaded templates config: ${templatesPath}`));
@@ -814,94 +691,6 @@ export async function loadConfig(
   }
 
   return config;
-}
-
-/**
- * Download and extract templates from Git repository with caching support
- */
-export async function downloadTemplatesFromGit(
-  templatePath: string,
-  targetDir: string,
-  repoUrl = DEFAULT_CONFIG_REPO,
-  branch = DEFAULT_BRANCH,
-  debug = false,
-  options: { useCache?: boolean; directFetch?: boolean } = {}
-): Promise<void> {
-  try {
-    const cacheDir =
-      options.useCache !== false
-        ? getOptimalCacheDirectory()
-        : path.join(os.tmpdir(), 'mvp-generate-template');
-    const repoHash = Buffer.from(repoUrl).toString('base64').slice(0, 16);
-    const tempDir = path.join(cacheDir, `repo-${repoHash}`);
-
-    if (debug) {
-      console.log(
-        chalk.gray(
-          `🌐 Downloading template from Git: ${repoUrl}/templates/${templatePath}`
-        )
-      );
-      if (options.useCache !== false) {
-        console.log(chalk.gray(`📁 Cache directory: ${cacheDir}`));
-      }
-    }
-
-    // Ensure cache directory exists
-    await fs.ensureDir(cacheDir);
-
-    // Clone or pull repository to cache
-    if (await fs.pathExists(tempDir)) {
-      if (debug) {
-        console.log(chalk.gray(`📁 Using cached repository: ${tempDir}`));
-      }
-      try {
-        execSync(`git pull origin ${branch}`, {
-          cwd: tempDir,
-          stdio: debug ? 'inherit' : 'pipe',
-        });
-      } catch (pullError) {
-        if (debug) {
-          console.log(chalk.yellow(`⚠️ Git pull failed, using cached version`));
-        }
-      }
-    } else {
-      if (debug) {
-        console.log(chalk.gray(`📦 Cloning repository to cache: ${tempDir}`));
-      }
-      execSync(`git clone --depth 1 --branch ${branch} ${repoUrl} ${tempDir}`, {
-        stdio: debug ? 'inherit' : 'pipe',
-      });
-    }
-
-    const sourceDir = path.join(tempDir, 'templates', templatePath);
-
-    if (!(await fs.pathExists(sourceDir))) {
-      throw new Error(`Template "${templatePath}" not found in repository`);
-    }
-
-    // Copy template to target directory
-    await fs.copy(sourceDir, targetDir);
-
-    if (debug) {
-      console.log(
-        chalk.green(`✓ Template copied: ${templatePath} → ${targetDir}`)
-      );
-    }
-
-    // Clean up temp directory if cache is disabled
-    if (options.useCache === false && !debug) {
-      await fs.remove(tempDir);
-    }
-  } catch (error) {
-    if (debug) {
-      console.error(
-        chalk.red(
-          `❌ Template download failed: ${error instanceof Error ? error.message : error}`
-        )
-      );
-    }
-    throw error;
-  }
 }
 
 /**
@@ -1035,12 +824,6 @@ export function createDefaultWorkflowConfig(): WorkflowConfig {
         type: 'list',
         name: 'template',
         message: 'Select a project template:',
-        choices: [
-          { name: '🌐 Express + Handlebars', value: 'express-hbs' },
-          { name: '⚡ Express API', value: 'express-api' },
-          { name: '📦 Node.js CLI Tool', value: 'node-cli' },
-          { name: '🏗️ Basic Node.js', value: 'basic-node' },
-        ],
         required: false,
       },
       {
@@ -1127,4 +910,129 @@ export function createDefaultTemplatesConfig(): TemplatesConfig {
       npmInstall: true,
     },
   };
+}
+
+/**
+ * Download specific template files from GitHub repository using raw API
+ */
+export async function downloadTemplateFilesFromGitHub(
+  templatePath: string,
+  targetDir: string,
+  repoUrl = DEFAULT_CONFIG_REPO,
+  branch = DEFAULT_BRANCH,
+  debug = false
+): Promise<void> {
+  try {
+    if (!isGitHubRepository(repoUrl)) {
+      throw new Error(
+        `Only GitHub repositories are supported for template downloads.\n` +
+          `Repository: ${repoUrl}\n` +
+          `Use local templates instead.`
+      );
+    }
+
+    if (debug) {
+      console.log(
+        chalk.gray(
+          `🌐 Downloading template files from GitHub raw: ${repoUrl}/templates/${templatePath}`
+        )
+      );
+    }
+
+    // Get list of files to download from templates config
+    const templatesConfigPath = 'config/templates.json';
+    const templatesConfigContent = await downloadFromGitHubRaw(
+      repoUrl,
+      templatesConfigPath,
+      branch,
+      debug
+    );
+
+    if (!templatesConfigContent) {
+      throw new Error(
+        `Templates configuration not found: ${templatesConfigPath}`
+      );
+    }
+
+    const templatesConfig = JSON.parse(templatesConfigContent);
+    const template = templatesConfig.templates.find(
+      (t: any) => t.path === templatePath || t.name === templatePath
+    );
+
+    if (!template) {
+      throw new Error(
+        `Template "${templatePath}" not found in templates configuration`
+      );
+    }
+
+    // Define common template files to download
+    const templateFiles = [
+      'package.json',
+      'README.md',
+      'src/index.js',
+      'src/index.ts',
+      '.gitignore',
+      '.env.example',
+      'tsconfig.json',
+      'esbuild.js',
+      'Dockerfile',
+      'docker-compose.yml',
+    ];
+
+    // Ensure target directory exists
+    await fs.ensureDir(targetDir);
+
+    // Download files in parallel
+    const downloadPromises = templateFiles.map(async (fileName) => {
+      const filePath = `templates/${templatePath}/${fileName}`;
+      const content = await downloadFromGitHubRaw(
+        repoUrl,
+        filePath,
+        branch,
+        false // Don't show individual file debug messages
+      );
+
+      if (content) {
+        const targetFile = path.join(targetDir, fileName);
+        await fs.ensureDir(path.dirname(targetFile));
+        await fs.writeFile(targetFile, content, 'utf-8');
+
+        if (debug) {
+          console.log(chalk.green(`✓ Downloaded: ${fileName}`));
+        }
+        return { fileName, success: true };
+      } else {
+        if (debug) {
+          console.log(chalk.gray(`⚠️ Skipped (not found): ${fileName}`));
+        }
+        return { fileName, success: false };
+      }
+    });
+
+    const results = await Promise.all(downloadPromises);
+    const successCount = results.filter((r) => r.success).length;
+
+    if (debug) {
+      console.log(
+        chalk.green(
+          `✅ Template download complete: ${successCount}/${templateFiles.length} files`
+        )
+      );
+    }
+
+    if (successCount === 0) {
+      throw new Error(
+        `No template files found for "${templatePath}" in repository`
+      );
+    }
+  } catch (error) {
+    if (debug) {
+      console.error(
+        chalk.red(
+          `❌ Template download failed: ${error instanceof Error ? error.message : error}`
+        )
+      );
+    }
+    throw error;
+  }
 }

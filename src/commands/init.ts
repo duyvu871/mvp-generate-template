@@ -20,10 +20,15 @@ import {
 import {
   loadConfig,
   findConfigFiles,
+  downloadTemplateFilesFromGitHub,
+  getTemplateConfig,
+  filterTemplatesByOptions,
+  getTemplateChoices,
   createDefaultWorkflowConfig,
   createDefaultTemplatesConfig,
-  getTemplateConfig,
-  downloadTemplatesFromGit,
+  cleanCache,
+  getCacheInfo,
+  getPackageInfo,
 } from '../utils/config.js';
 import {
   executeWorkflowPrompts,
@@ -66,13 +71,14 @@ type InitOptions = {
   repo?: string;
   branch?: string;
   local?: boolean;
-  noCache?: boolean;
-  directFetch?: boolean;
   debug?: boolean;
   verbose?: boolean;
 };
 
 export function initCommand(program: Command) {
+  // Get repository info for help text
+  const packageInfo = getPackageInfo();
+
   program
     .command('init <project-name>')
     .description(
@@ -89,15 +95,13 @@ export function initCommand(program: Command) {
       '-r, --repo <url>',
       'Git repository URL for configurations and templates'
     )
-    .option('-b, --branch <name>', 'Git branch to use (default: main)')
+    .option(
+      '-b, --branch <n>',
+      `Git branch to use (default: ${packageInfo.defaultBranch || 'main'})`
+    )
     .option(
       '-l, --local',
       'Use local files first instead of Git repository (legacy mode)'
-    )
-    .option('--no-cache', 'Disable caching and use temporary directories')
-    .option(
-      '--direct-fetch',
-      'Fetch content directly from Git without caching (fastest)'
     )
     .option('--debug', 'Show detailed debug information')
     .option('--verbose', 'Show verbose output')
@@ -105,7 +109,7 @@ export function initCommand(program: Command) {
       'after',
       `
 Examples:
-  $ mvp-gen init my-project          Create project (uses Git repo by default)
+  $ mvp-gen init my-project          Create project (uses GitHub raw downloads)
   $ mvp-gen init . --local           Create project using local files only
   $ mvp-gen init ./                  Create project in current directory
   $ mvp-gen init my-app -t express-hbs --typescript --esbuild --install
@@ -115,18 +119,13 @@ Examples:
   $ mvp-gen init my-project --repo https://github.com/user/config-repo.git
   $ mvp-gen init my-app --repo https://github.com/user/repo.git --branch develop
   $ mvp-gen init my-project --debug  Show debug information
-  $ mvp-gen init my-app --no-cache   Disable caching (use temp directories)
-  $ mvp-gen init my-project --direct-fetch  Fetch directly without any caching (fastest)
   
-Cache Behavior:
-  - Default: Uses optimal cache directory (npm cache or OS cache)
-  - --no-cache: Uses temporary directories, cleaned up after use
-  - --direct-fetch: Fetches content directly from Git without any local storage
+Download Behavior:
+  - Default: Uses GitHub raw API for direct file downloads (fast and always up-to-date)
+  - --local: Uses local files first (legacy v0.2.0 behavior)
   
-Default Behavior:
-  - Without --local: Downloads configs/templates from Git repository first
-  - With --local: Uses local files first (legacy v0.2.0 behavior)
-  - Git repository: https://github.com/duyvu871/mvp-generate-template.git
+Default Repository:
+  - ${packageInfo.defaultRepo || 'https://github.com/duyvu871/mvp-generate-template.git'} (branch: ${packageInfo.defaultBranch || 'main'})
     `
     )
     .action(async (projectName: string, options: InitOptions) => {
@@ -197,33 +196,23 @@ async function initializeProject(projectName: string, options: InitOptions) {
   const isDebug =
     process.env.NODE_ENV === 'development' || options.debug || options.verbose;
 
-  // Prepare cache options
-  const cacheOptions = {
-    useCache: !options.noCache,
-    directFetch: options.directFetch || false,
-  };
+  // Get repository information from package.json
+  const packageInfo = getPackageInfo();
+  const defaultRepoUrl =
+    options.repo ||
+    packageInfo.defaultRepo ||
+    'https://github.com/duyvu871/mvp-generate-template.git';
+  const defaultBranch = options.branch || packageInfo.defaultBranch || 'main';
 
   if (isDebug) {
-    console.log(
-      chalk.cyan('\n🚀 MVP Generator - Git-First Configuration Loading')
-    );
+    console.log(chalk.cyan('\n🚀 MVP Generator - GitHub Raw Downloads'));
     console.log(
       chalk.gray(
-        `Mode: ${options.local ? 'Local First (Legacy)' : 'Git First (Default)'}`
+        `Strategy: ${options.local ? 'Local First (Legacy)' : 'GitHub Raw Downloads (Default)'}`
       )
     );
-    console.log(
-      chalk.gray(
-        `Cache: ${cacheOptions.directFetch ? 'Direct fetch (no cache)' : cacheOptions.useCache ? 'Enabled' : 'Disabled'}`
-      )
-    );
-    if (!options.local) {
-      console.log(
-        chalk.gray(
-          `Default Repository: https://github.com/duyvu871/mvp-generate-template.git`
-        )
-      );
-    }
+    console.log(chalk.gray(`Repository: ${defaultRepoUrl}`));
+    console.log(chalk.gray(`Branch: ${defaultBranch}`));
   }
 
   // Load configuration files with Git-first approach
@@ -233,10 +222,9 @@ async function initializeProject(projectName: string, options: InitOptions) {
       globalConfig = await loadConfig(
         options.workflow,
         options.templates,
-        options.repo,
-        options.branch,
-        options.local || false,
-        cacheOptions
+        defaultRepoUrl,
+        defaultBranch,
+        options.local || false
       );
     } else if (options.config) {
       // Use unified config file (not implemented yet, for future)
@@ -247,35 +235,31 @@ async function initializeProject(projectName: string, options: InitOptions) {
       );
       const configFiles = await findConfigFiles(
         rootDir,
-        options.repo,
-        options.branch,
-        options.local || false,
-        cacheOptions
+        defaultRepoUrl,
+        defaultBranch,
+        options.local || false
       );
       globalConfig = await loadConfig(
         configFiles.workflow,
         configFiles.templates,
-        options.repo,
-        options.branch,
-        options.local || false,
-        cacheOptions
+        defaultRepoUrl,
+        defaultBranch,
+        options.local || false
       );
     } else {
       // Auto-discover config files with Git-first approach
       const configFiles = await findConfigFiles(
         rootDir,
-        options.repo,
-        options.branch,
-        options.local || false,
-        cacheOptions
+        defaultRepoUrl,
+        defaultBranch,
+        options.local || false
       );
       globalConfig = await loadConfig(
         configFiles.workflow,
         configFiles.templates,
-        options.repo,
-        options.branch,
-        options.local || false,
-        cacheOptions
+        defaultRepoUrl,
+        defaultBranch,
+        options.local || false
       );
     }
 
@@ -428,80 +412,54 @@ async function initializeProject(projectName: string, options: InitOptions) {
       spinner.text = 'Using fallback template structure...';
     }
 
-    // Template loading with Git-first approach (unless --local flag is used)
-    if (!options.local) {
-      try {
-        spinner.text = `Downloading template from Git repository...`;
-        await downloadTemplatesFromGit(
-          templatePath,
-          targetDir,
-          options.repo,
-          options.branch,
-          isDebug,
-          cacheOptions
-        );
-
-        if (isDebug) {
-          console.log(
-            chalk.green(`✅ Template downloaded from Git: ${templatePath}`)
-          );
-        }
-      } catch (error) {
-        console.warn(
-          chalk.yellow(
-            `⚠️ Git template download failed: ${error instanceof Error ? error.message : error}`
+    // Download template files using GitHub raw API
+    if (options.repo) {
+      if (isDebug) {
+        console.log(
+          chalk.blue(
+            '\n📥 Downloading template files from specified repository...'
           )
         );
-        console.log(chalk.gray('Falling back to local templates...'));
-
-        // Fallback to local templates
-        const templatesDir = getTemplatesPath();
-        const fullTemplatePath = path.join(templatesDir, templatePath);
-
-        if (await fs.pathExists(fullTemplatePath)) {
-          await fs.copy(fullTemplatePath, targetDir);
-        } else {
-          // Try fallback template structure
-          const fallbackTemplatePath = path.join(
-            templatesDir,
-            answers.template as string
-          );
-          if (await fs.pathExists(fallbackTemplatePath)) {
-            spinner.text = 'Using legacy template structure...';
-            await fs.copy(fallbackTemplatePath, targetDir);
-          } else {
-            throw new Error(
-              `Template "${templatePath}" not found locally or in Git repository`
-            );
-          }
-        }
       }
-    } else {
-      // Use local templates first (legacy mode)
-      const templatesDir = getTemplatesPath();
-      const fullTemplatePath = path.join(templatesDir, templatePath);
 
-      if (await fs.pathExists(fullTemplatePath)) {
-        await fs.copy(fullTemplatePath, targetDir);
+      await downloadTemplateFilesFromGitHub(
+        templatePath,
+        targetDir,
+        options.repo,
+        options.branch || defaultBranch,
+        isDebug
+      );
+    } else if (!options.local) {
+      // Use repository from package.json for GitHub raw downloads
+      if (isDebug) {
+        console.log(
+          chalk.blue(
+            '\n📥 Downloading template files from package repository...'
+          )
+        );
+      }
+
+      await downloadTemplateFilesFromGitHub(
+        templatePath,
+        targetDir,
+        defaultRepoUrl,
+        defaultBranch,
+        isDebug
+      );
+    } else {
+      // Fallback to local templates when --local flag is used
+      const localTemplatePath = path.join(
+        process.cwd(),
+        'templates',
+        templatePath
+      );
+      if (await fs.pathExists(localTemplatePath)) {
+        await fs.copy(localTemplatePath, targetDir);
         if (isDebug) {
-          console.log(
-            chalk.green(`✅ Template copied from local: ${templatePath}`)
-          );
+          console.log(chalk.green(`✓ Copied local template: ${templatePath}`));
         }
       } else {
-        // Try fallback template structure
-        const fallbackTemplatePath = path.join(
-          templatesDir,
-          answers.template as string
-        );
-        if (await fs.pathExists(fallbackTemplatePath)) {
-          spinner.text = 'Using legacy template structure...';
-          await fs.copy(fallbackTemplatePath, targetDir);
-        } else {
-          throw new Error(
-            `Template "${templatePath}" not found locally. Try without --local flag to download from Git.`
-          );
-        }
+        throw new Error(`Local template not found: ${templatePath}`);
       }
     }
 

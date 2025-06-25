@@ -81,17 +81,46 @@ async function executePromptStep(
   };
 
   // Add choices for list/checkbox prompts
-  if (step.choices && (step.type === 'list' || step.type === 'checkbox')) {
-    promptConfig.choices = step.choices;
-  } else if (
+  if (
     step.name === 'template' &&
     templatesConfig &&
     (step.type === 'list' || step.type === 'checkbox')
   ) {
     // Special handling for template choices - auto-populate from templates config
-    promptConfig.choices = getTemplateChoices(
+    // This takes priority over static choices defined in workflow
+    const templateChoices = getTemplateChoices(
       templatesConfig,
       step.templateDisplay
+    );
+    
+    // Debug: Check for duplicates
+    const isDebug = process.env.NODE_ENV === 'development' || 
+      process.argv.includes('--debug') || 
+      process.argv.includes('--verbose');
+      
+    if (isDebug) {
+      console.log(chalk.gray(`\n🔍 Debug: Template choices generation`));
+      console.log(chalk.gray(`  Total templates in config: ${templatesConfig.templates.length}`));
+      console.log(chalk.gray(`  Generated choices: ${templateChoices.length}`));
+      
+      // Check for duplicate values
+      const values = templateChoices.map(choice => choice.value);
+      const uniqueValues = [...new Set(values)];
+      if (values.length !== uniqueValues.length) {
+        console.log(chalk.yellow(`  ⚠️ Found ${values.length - uniqueValues.length} duplicate choices!`));
+        const duplicates = values.filter((value, index) => values.indexOf(value) !== index);
+        console.log(chalk.yellow(`  Duplicates: ${duplicates.join(', ')}`));
+      }
+    }
+    
+    promptConfig.choices = templateChoices;
+  } else if (step.choices && (step.type === 'list' || step.type === 'checkbox')) {
+    // Use static choices from workflow step
+    promptConfig.choices = step.choices;
+  } else if (step.name === 'template' && (step.type === 'list' || step.type === 'checkbox')) {
+    // Template step without templates config and without static choices
+    throw new Error(
+      'Template step requires either static choices in workflow config or templates configuration to be loaded'
     );
   }
 

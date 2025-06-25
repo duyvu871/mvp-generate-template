@@ -83,7 +83,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/duyvu871/mvp-generate-template.git"
+    "url": "https://github.com/duyvu871/mvp-generate-template.git",
+    "branch": "main"
   },
   "bugs": {
     "url": "https://github.com/duyvu871/mvp-generate-template/issues"
