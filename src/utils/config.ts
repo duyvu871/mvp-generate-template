@@ -3,6 +3,7 @@ import path from 'path';
 import * as YAML from 'yaml';
 import chalk from 'chalk';
 import { execSync } from 'child_process';
+import os from 'os';
 import {
   WorkflowConfigSchema,
   TemplatesConfigSchema,
@@ -12,6 +13,11 @@ import {
   type TemplateConfig,
   type TemplateOption,
 } from '../schemas/config.js';
+import {
+  downloadFromGitHubRaw,
+  isGitHubRepository,
+  convertToGitHubRawUrl,
+} from './github-raw.js';
 
 // Default Git repository for configurations and templates
 const DEFAULT_CONFIG_REPO =
@@ -19,39 +25,214 @@ const DEFAULT_CONFIG_REPO =
 const DEFAULT_BRANCH = 'main';
 
 /**
- * Download file from Git repository
+ * Get appropriate cache directory for the platform
  */
-async function downloadFromGit(
+function getCacheDirectory(): string {
+  const platform = os.platform();
+  const homeDir = os.homedir();
+
+  switch (platform) {
+    case 'win32':
+      return path.join(
+        process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local'),
+        'mvp-generate-template',
+        'cache'
+      );
+    case 'darwin':
+      return path.join(homeDir, 'Library', 'Caches', 'mvp-generate-template');
+    case 'linux':
+    default:
+      return path.join(
+        process.env.XDG_CACHE_HOME || path.join(homeDir, '.cache'),
+        'mvp-generate-template'
+      );
+  }
+}
+
+/**
+ * Get npm cache directory if available
+ */
+function getNpmCacheDirectory(): string | null {
+  try {
+    const npmCacheDir = execSync('npm config get cache', {
+      encoding: 'utf8',
+    }).trim();
+    if (npmCacheDir && npmCacheDir !== 'undefined') {
+      return path.join(npmCacheDir, 'mvp-generate-template');
+    }
+  } catch (error) {
+    // npm not available or command failed
+  }
+  return null;
+}
+
+/**
+ * Get the best cache directory available
+ */
+function getOptimalCacheDirectory(): string {
+  // Try npm cache first, fallback to OS cache
+  const npmCache = getNpmCacheDirectory();
+  if (npmCache) {
+    return npmCache;
+  }
+  return getCacheDirectory();
+}
+
+/**
+ * Download file content directly from Git repository without local caching
+ */
+async function downloadContentFromGit(
   repoUrl: string,
   filePath: string,
   branch = DEFAULT_BRANCH,
   debug = false
 ): Promise<string | null> {
   try {
-    const tempDir = path.join(process.cwd(), '.tmp-mvp-config');
+    if (debug) {
+      console.log(
+        chalk.gray(
+          `🌐 Fetching content directly from repository: ${repoUrl}/${filePath}`
+        )
+      );
+    }
+
+    // Primary strategy: GitHub raw API using curl (fastest and most reliable)
+    if (isGitHubRepository(repoUrl)) {
+      const content = await downloadFromGitHubRaw(
+        repoUrl,
+        filePath,
+        branch,
+        debug
+      );
+      if (content) {
+        return content;
+      }
+
+      if (debug) {
+        console.log(chalk.yellow(`⚠️ GitHub raw API failed for: ${filePath}`));
+      }
+    }
+
+    // For non-GitHub repositories, return error with helpful message
+    if (!isGitHubRepository(repoUrl)) {
+      throw new Error(
+        `Direct fetch only supports GitHub repositories.\n` +
+          `Repository: ${repoUrl}\n` +
+          `Use caching mode instead (remove --direct-fetch flag)`
+      );
+    }
+
+    // If we reach here, it means GitHub raw API failed
+    throw new Error(
+      `Failed to fetch from GitHub raw API.\n` +
+        `File: ${filePath}\n` +
+        `Repository: ${repoUrl}\n` +
+        `Branch: ${branch}\n` +
+        `This might be a private repository or the file doesn't exist.`
+    );
+  } catch (error) {
+    if (debug) {
+      console.error(
+        chalk.red(
+          `❌ Direct Git fetch failed: ${error instanceof Error ? error.message : error}`
+        )
+      );
+    }
+    return null;
+  }
+}
+
+/**
+ * Download file from Git repository with caching support
+ */
+async function downloadFromGit(
+  repoUrl: string,
+  filePath: string,
+  branch = DEFAULT_BRANCH,
+  debug = false,
+  useCache = true,
+  directFetch = false
+): Promise<string | null> {
+  // If direct fetch is requested, get content without caching
+  if (directFetch) {
+    return await downloadContentFromGit(repoUrl, filePath, branch, debug);
+  }
+
+  try {
+    const cacheDir = useCache
+      ? getOptimalCacheDirectory()
+      : path.join(os.tmpdir(), 'mvp-generate-template');
+    const repoHash = Buffer.from(repoUrl).toString('base64').slice(0, 16);
+    const tempDir = path.join(cacheDir, `repo-${repoHash}`);
 
     if (debug) {
       console.log(
         chalk.gray(`🌐 Downloading from Git: ${repoUrl}/${filePath}`)
       );
+      console.log(chalk.gray(`📁 Cache directory: ${tempDir}`));
     }
 
-    // Clone or pull repository
+    // Ensure cache directory exists
+    await fs.ensureDir(cacheDir);
+
+    // Clone or pull repository to cache
     if (await fs.pathExists(tempDir)) {
       if (debug) {
-        console.log(chalk.gray(`📁 Using existing temp directory: ${tempDir}`));
+        console.log(chalk.gray(`📁 Using cached repository: ${tempDir}`));
       }
-      execSync(`git pull origin ${branch}`, {
-        cwd: tempDir,
-        stdio: debug ? 'inherit' : 'pipe',
-      });
+      try {
+        execSync(`git pull origin ${branch}`, {
+          cwd: tempDir,
+          stdio: debug ? 'inherit' : 'pipe',
+        });
+      } catch (pullError) {
+        if (debug) {
+          console.log(chalk.yellow(`⚠️ Git pull failed, using cached version`));
+        }
+      }
     } else {
       if (debug) {
-        console.log(chalk.gray(`📦 Cloning repository to: ${tempDir}`));
+        console.log(chalk.gray(`📦 Cloning repository to cache: ${tempDir}`));
       }
-      execSync(`git clone --depth 1 --branch ${branch} ${repoUrl} ${tempDir}`, {
-        stdio: debug ? 'inherit' : 'pipe',
-      });
+
+      try {
+        execSync(
+          `git clone --depth 1 --branch ${branch} ${repoUrl} ${tempDir}`,
+          {
+            stdio: debug ? 'inherit' : 'pipe',
+          }
+        );
+      } catch (cloneError) {
+        if (debug) {
+          console.error(
+            chalk.red(
+              `❌ Git clone failed: ${cloneError instanceof Error ? cloneError.message : cloneError}`
+            )
+          );
+        }
+
+        // For SSH URLs or private repos, provide helpful error message
+        if (
+          repoUrl.startsWith('git@') ||
+          (cloneError instanceof Error &&
+            cloneError.message.includes('Permission denied'))
+        ) {
+          const httpsUrl = repoUrl.replace(
+            /^git@github\.com:/,
+            'https://github.com/'
+          );
+          throw new Error(
+            `Git clone failed for SSH URL: ${repoUrl}\n\n` +
+              `Solutions:\n` +
+              `1. Use HTTPS URL instead: ${httpsUrl}\n` +
+              `2. Configure SSH keys: ssh-add ~/.ssh/id_rsa\n` +
+              `3. For private repos, use local files with --local flag\n` +
+              `4. Use --direct-fetch for public GitHub repos (uses raw.githubusercontent.com)`
+          );
+        }
+
+        throw cloneError;
+      }
     }
 
     const fullPath = path.join(tempDir, filePath);
@@ -81,12 +262,79 @@ async function downloadFromGit(
 }
 
 /**
+ * Clean up cache directory
+ */
+export async function cleanCache(debug = false): Promise<void> {
+  try {
+    const cacheDir = getOptimalCacheDirectory();
+
+    if (await fs.pathExists(cacheDir)) {
+      if (debug) {
+        console.log(chalk.gray(`🧹 Cleaning cache directory: ${cacheDir}`));
+      }
+      await fs.remove(cacheDir);
+      console.log(chalk.green(`✅ Cache cleaned successfully`));
+    } else {
+      if (debug) {
+        console.log(chalk.gray(`📁 No cache directory found at: ${cacheDir}`));
+      }
+    }
+  } catch (error) {
+    console.error(
+      chalk.red(
+        `❌ Failed to clean cache: ${error instanceof Error ? error.message : error}`
+      )
+    );
+  }
+}
+
+/**
+ * Get cache information
+ */
+export async function getCacheInfo(): Promise<{
+  cacheDir: string;
+  exists: boolean;
+  size?: string;
+  repositories?: string[];
+}> {
+  const cacheDir = getOptimalCacheDirectory();
+  const exists = await fs.pathExists(cacheDir);
+
+  const info = {
+    cacheDir,
+    exists,
+  } as {
+    cacheDir: string;
+    exists: boolean;
+    size?: string;
+    repositories?: string[];
+  };
+
+  if (exists) {
+    try {
+      // Get cache size
+      const stats = await fs.stat(cacheDir);
+      info.size = `${(stats.size / 1024 / 1024).toFixed(2)} MB`;
+
+      // Get cached repositories
+      const items = await fs.readdir(cacheDir);
+      info.repositories = items.filter((item) => item.startsWith('repo-'));
+    } catch (error) {
+      // Ignore errors for size/repo info
+    }
+  }
+
+  return info;
+}
+
+/**
  * Load and validate YAML configuration file from local or Git URL
  */
 export async function loadWorkflowConfig(
   configPath: string,
   repoUrl?: string,
-  branch?: string
+  branch?: string,
+  options: { useCache?: boolean; directFetch?: boolean } = {}
 ): Promise<WorkflowConfig> {
   try {
     const isDebug =
@@ -113,7 +361,14 @@ export async function loadWorkflowConfig(
         );
       }
 
-      const content = await downloadFromGit(gitUrl, gitPath, branch, isDebug);
+      const content = await downloadFromGit(
+        gitUrl,
+        gitPath,
+        branch,
+        isDebug,
+        options.useCache ?? true,
+        options.directFetch ?? false
+      );
       if (!content) {
         throw new Error(
           `Configuration file not found in Git repository: ${gitPath}`
@@ -158,7 +413,8 @@ export async function loadWorkflowConfig(
 export async function loadTemplatesConfig(
   configPath: string,
   repoUrl?: string,
-  branch?: string
+  branch?: string,
+  options: { useCache?: boolean; directFetch?: boolean } = {}
 ): Promise<TemplatesConfig> {
   try {
     const isDebug =
@@ -185,7 +441,14 @@ export async function loadTemplatesConfig(
         );
       }
 
-      const content = await downloadFromGit(gitUrl, gitPath, branch, isDebug);
+      const content = await downloadFromGit(
+        gitUrl,
+        gitPath,
+        branch,
+        isDebug,
+        options.useCache ?? true,
+        options.directFetch ?? false
+      );
       if (!content) {
         throw new Error(
           `Templates configuration file not found in Git repository: ${gitPath}`
@@ -233,7 +496,8 @@ export async function findConfigFiles(
   rootDir: string,
   repoUrl?: string,
   branch?: string,
-  useLocalFirst = false
+  useLocalFirst = false,
+  options: { useCache?: boolean; directFetch?: boolean } = {}
 ): Promise<{ workflow?: string; templates?: string }> {
   const isDebug =
     process.env.NODE_ENV === 'development' ||
@@ -250,6 +514,11 @@ export async function findConfigFiles(
     console.log(
       chalk.gray(
         `  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`
+      )
+    );
+    console.log(
+      chalk.gray(
+        `  Cache mode: ${options.directFetch ? 'Direct fetch (no cache)' : options.useCache !== false ? 'Cache enabled' : 'Cache disabled'}`
       )
     );
     if (repoUrl) {
@@ -316,7 +585,9 @@ export async function findConfigFiles(
             repoUrl,
             workflowPath,
             branch,
-            isDebug
+            isDebug,
+            options.useCache ?? true,
+            options.directFetch ?? false
           );
           if (content) {
             configFiles.workflow = workflowPath;
@@ -334,7 +605,9 @@ export async function findConfigFiles(
             repoUrl,
             templatesPath,
             branch,
-            isDebug
+            isDebug,
+            options.useCache ?? true,
+            options.directFetch ?? false
           );
           if (content) {
             configFiles.templates = templatesPath;
@@ -360,7 +633,9 @@ export async function findConfigFiles(
         gitUrl,
         workflowPath,
         branch,
-        isDebug
+        isDebug,
+        options.useCache ?? true,
+        options.directFetch ?? false
       );
       if (content) {
         configFiles.workflow = workflowPath;
@@ -379,7 +654,9 @@ export async function findConfigFiles(
         gitUrl,
         templatesPath,
         branch,
-        isDebug
+        isDebug,
+        options.useCache ?? true,
+        options.directFetch ?? false
       );
       if (content) {
         configFiles.templates = templatesPath;
@@ -451,7 +728,8 @@ export async function loadConfig(
   templatesPath?: string,
   repoUrl?: string,
   branch?: string,
-  useLocalFirst = false
+  useLocalFirst = false,
+  options: { useCache?: boolean; directFetch?: boolean } = {}
 ): Promise<Config> {
   const config: Config = {};
   const isDebug =
@@ -468,6 +746,11 @@ export async function loadConfig(
     console.log(
       chalk.gray(
         `  Strategy: ${useLocalFirst ? 'Local first' : 'Git first (default)'}`
+      )
+    );
+    console.log(
+      chalk.gray(
+        `  Cache mode: ${options.directFetch ? 'Direct fetch (no cache)' : options.useCache !== false ? 'Cache enabled' : 'Cache disabled'}`
       )
     );
     if (defaultRepo) {
@@ -488,7 +771,8 @@ export async function loadConfig(
       config.workflow = await loadWorkflowConfig(
         workflowPath,
         defaultRepo,
-        branch
+        branch,
+        options
       );
       if (isDebug) {
         console.log(chalk.green(`✓ Loaded workflow config: ${workflowPath}`));
@@ -508,7 +792,8 @@ export async function loadConfig(
       config.templates = await loadTemplatesConfig(
         templatesPath,
         defaultRepo,
-        branch
+        branch,
+        options
       );
       if (isDebug) {
         console.log(chalk.green(`✓ Loaded templates config: ${templatesPath}`));
@@ -532,17 +817,23 @@ export async function loadConfig(
 }
 
 /**
- * Download and extract templates from Git repository
+ * Download and extract templates from Git repository with caching support
  */
 export async function downloadTemplatesFromGit(
   templatePath: string,
   targetDir: string,
   repoUrl = DEFAULT_CONFIG_REPO,
   branch = DEFAULT_BRANCH,
-  debug = false
+  debug = false,
+  options: { useCache?: boolean; directFetch?: boolean } = {}
 ): Promise<void> {
   try {
-    const tempDir = path.join(process.cwd(), '.tmp-mvp-templates');
+    const cacheDir =
+      options.useCache !== false
+        ? getOptimalCacheDirectory()
+        : path.join(os.tmpdir(), 'mvp-generate-template');
+    const repoHash = Buffer.from(repoUrl).toString('base64').slice(0, 16);
+    const tempDir = path.join(cacheDir, `repo-${repoHash}`);
 
     if (debug) {
       console.log(
@@ -550,20 +841,32 @@ export async function downloadTemplatesFromGit(
           `🌐 Downloading template from Git: ${repoUrl}/templates/${templatePath}`
         )
       );
+      if (options.useCache !== false) {
+        console.log(chalk.gray(`📁 Cache directory: ${cacheDir}`));
+      }
     }
 
-    // Clone or pull repository
+    // Ensure cache directory exists
+    await fs.ensureDir(cacheDir);
+
+    // Clone or pull repository to cache
     if (await fs.pathExists(tempDir)) {
       if (debug) {
-        console.log(chalk.gray(`📁 Using existing temp directory: ${tempDir}`));
+        console.log(chalk.gray(`📁 Using cached repository: ${tempDir}`));
       }
-      execSync(`git pull origin ${branch}`, {
-        cwd: tempDir,
-        stdio: debug ? 'inherit' : 'pipe',
-      });
+      try {
+        execSync(`git pull origin ${branch}`, {
+          cwd: tempDir,
+          stdio: debug ? 'inherit' : 'pipe',
+        });
+      } catch (pullError) {
+        if (debug) {
+          console.log(chalk.yellow(`⚠️ Git pull failed, using cached version`));
+        }
+      }
     } else {
       if (debug) {
-        console.log(chalk.gray(`📦 Cloning repository to: ${tempDir}`));
+        console.log(chalk.gray(`📦 Cloning repository to cache: ${tempDir}`));
       }
       execSync(`git clone --depth 1 --branch ${branch} ${repoUrl} ${tempDir}`, {
         stdio: debug ? 'inherit' : 'pipe',
@@ -585,8 +888,8 @@ export async function downloadTemplatesFromGit(
       );
     }
 
-    // Clean up temp directory if not in debug mode
-    if (!debug) {
+    // Clean up temp directory if cache is disabled
+    if (options.useCache === false && !debug) {
       await fs.remove(tempDir);
     }
   } catch (error) {

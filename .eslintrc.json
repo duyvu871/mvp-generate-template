@@ -20,6 +20,7 @@
     "prettier/prettier": "error",
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/no-explicit-any": "warn",
+    "no-useless-escape": "off",
     "no-console": "off",
     "no-process-exit": "off",
     "prefer-const": "error",

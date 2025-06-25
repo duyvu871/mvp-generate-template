@@ -29,12 +29,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Support for specific Git branches with `--branch` option
   - Graceful fallback to local files when Git access fails
 
-- **Enhanced CLI Options**: Git repository integration with local override
+- **Smart Cache Management**: Optimized caching system with multiple storage strategies
+  - **Optimal Cache Directory**: Uses npm cache directory or OS-appropriate cache locations
+  - **Platform-specific cache locations**:
+    - Windows: `%LOCALAPPDATA%\mvp-generate-template\cache`
+    - macOS: `~/Library/Caches/mvp-generate-template`
+    - Linux: `~/.cache/mvp-generate-template` (or `$XDG_CACHE_HOME`)
+  - **npm cache integration**: Automatically uses npm cache directory when available
+  - **No workspace pollution**: Never saves cache files in current working directory
+
+- **Enhanced CLI Options**: Git repository integration with cache control
   - `--repo <url>`: Custom Git repository URL for configurations and templates
   - `--branch <name>`: Specific Git branch to use (default: main)
   - `--local`: **NEW FLAG** - Use local files first instead of Git (legacy v0.2.0 behavior)
+  - `--no-cache`: Disable caching and use temporary directories
+  - `--direct-fetch`: Fetch content directly from Git without any local storage (fastest)
   - Smart temporary directory management for Git operations
   - Comprehensive Git operation logging in debug mode
+
+- **Cache Management Commands**: Complete cache control system
+  - `mvp-gen cache info`: Show cache information and statistics
+  - `mvp-gen cache clean`: Clean all cached repositories and configurations
+  - `mvp-gen cache path`: Show cache directory path
+  - Cache size reporting and repository listing
+  - Force clean option with `--force` flag
+
+- **Direct Git Fetching**: Multiple content retrieval strategies
+  - **Git Archive**: Direct file content fetching without local cloning
+  - **GitHub API**: Fallback for GitHub repositories using REST API
+  - **Fallback curl**: Command-line fallback for maximum compatibility
+  - **Smart fallback chain**: Automatically tries multiple methods for reliability
 
 - **Default Git Repository**: Seamless configuration loading
   - Default repository: `https://github.com/duyvu871/mvp-generate-template.git`
@@ -61,6 +85,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Zero-configuration experience for new users
   - Automatic access to latest templates and configurations
 
+- **Storage Strategy**: No more workspace pollution
+  - **REMOVED**: No temporary files in current working directory
+  - **IMPROVED**: All cache files stored in appropriate system locations
+  - **OPTIMIZED**: Repository cloning uses optimal cache directories
+  - **PERFORMANCE**: Smart cache reuse and management
+
 - **Configuration Loading**: Git repository as primary source
   - All configuration functions use Git by default
   - Repository cloning and caching handled automatically
@@ -80,27 +110,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive usage patterns
 
 ### Technical Details
-- **Git Integration**: Native git commands for seamless repository operations
-- **Temporary Files**: Optimized temporary directory management for Git operations
-- **Error Handling**: Enhanced Git operation error handling with user-friendly messages
-- **Performance**: Efficient shallow clones and repository caching
-- **Backward Compatibility**: Full support for local files with `--local` flag
+- **Cache Architecture**: Multi-tier caching with platform optimization
+- **Git Integration**: Native git commands with multiple fallback strategies
+- **Memory Efficiency**: Direct content fetching option to minimize storage
+- **Cross-Platform**: OS-specific cache directory detection and management
+- **Network Optimization**: Shallow clones and smart content fetching
+- **Error Handling**: Comprehensive Git operation error handling with graceful fallbacks
 
 ### Example Usage
 
-#### New Default Behavior (Git-First)
+#### New Default Behavior (Git-First with Smart Caching)
 ```bash
-# Uses Git repository by default (NEW DEFAULT)
+# Uses Git repository by default with optimal caching (NEW DEFAULT)
 mvp-gen init my-project
 
-# Uses Git with custom repository
-mvp-gen init my-app --repo https://github.com/user/custom-configs.git
+# Check cache information
+mvp-gen cache info
 
-# Uses Git with specific branch
-mvp-gen init my-project --repo https://github.com/user/configs.git --branch develop
+# Clean cache when needed
+mvp-gen cache clean
 
-# Debug Git operations
-mvp-gen init my-app --debug
+# Use different caching strategies
+mvp-gen init my-app --no-cache        # Use temp directories
+mvp-gen init my-project --direct-fetch # Direct fetch, no storage
+```
+
+#### Cache Management
+```bash
+# View cache information
+mvp-gen cache info
+
+# Show detailed cache information
+mvp-gen cache info --debug
+
+# Get cache directory path
+mvp-gen cache path
+
+# Clean cache with confirmation
+mvp-gen cache clean
+
+# Force clean without confirmation
+mvp-gen cache clean --force
 ```
 
 #### Legacy Behavior (Local-First)
@@ -126,26 +176,28 @@ mvp-gen init my-app --workflow config/advanced-workflow.yml --repo https://githu
 
 ### Migration Guide for 0.3.0
 
+#### Cache Storage Changes
+- **No Impact**: Cache files automatically stored in optimal locations
+- **Workspace Clean**: Current working directory no longer polluted with temp files
+- **Performance**: Faster subsequent operations due to smart caching
+- **Cross-Platform**: Cache locations follow OS conventions
+
+#### Cache Directory Locations
+- **Windows**: `%LOCALAPPDATA%\mvp-generate-template\cache`
+- **macOS**: `~/Library/Caches/mvp-generate-template`
+- **Linux**: `~/.cache/mvp-generate-template`
+- **npm users**: Automatically uses npm cache directory when available
+
 #### For Existing Users (v0.2.0)
 - **No breaking changes**: Your existing local configurations will continue to work
+- **Better performance**: Automatic caching improves operation speed
 - **New behavior**: Add `--local` flag to maintain exact v0.2.0 behavior
-- **Benefit**: Access to latest templates and configurations from Git automatically
-
-#### Migration Commands
-```bash
-# v0.2.0 behavior
-mvp-gen init my-project
-
-# v0.3.0 equivalent (maintains local-first)
-mvp-gen init my-project --local
-
-# v0.3.0 new default (Git-first)
-mvp-gen init my-project
-```
+- **Cache benefits**: Faster template downloads and configuration loading
 
 #### For New Users
 - **Zero setup**: Just run `mvp-gen init my-project` for automatic Git integration
 - **Latest templates**: Always get the most up-to-date templates and configurations
+- **Smart caching**: Optimal performance with automatic cache management
 - **No configuration needed**: Default repository provides comprehensive setup
 
 ### Repository Structure for Git-Based Configurations
@@ -164,10 +216,11 @@ your-config-repo/
 ```
 
 ### Performance Improvements
-- **Smart Caching**: Git repositories cached for subsequent uses
+- **Smart Caching**: Git repositories cached in optimal system locations
+- **Direct Fetching**: Option to fetch content without any local storage
 - **Shallow Clones**: Minimal Git operations for faster downloads
-- **Fallback Logic**: Intelligent fallback prevents failures
-- **Debug Mode**: Comprehensive logging for troubleshooting
+- **Cache Reuse**: Intelligent cache management and reuse
+- **Network Optimization**: Multiple content retrieval strategies for reliability
 
 ## [0.2.0] - 2025-06-25
 

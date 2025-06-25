@@ -66,6 +66,8 @@ type InitOptions = {
   repo?: string;
   branch?: string;
   local?: boolean;
+  noCache?: boolean;
+  directFetch?: boolean;
   debug?: boolean;
   verbose?: boolean;
 };
@@ -92,6 +94,11 @@ export function initCommand(program: Command) {
       '-l, --local',
       'Use local files first instead of Git repository (legacy mode)'
     )
+    .option('--no-cache', 'Disable caching and use temporary directories')
+    .option(
+      '--direct-fetch',
+      'Fetch content directly from Git without caching (fastest)'
+    )
     .option('--debug', 'Show detailed debug information')
     .option('--verbose', 'Show verbose output')
     .addHelpText(
@@ -108,6 +115,13 @@ Examples:
   $ mvp-gen init my-project --repo https://github.com/user/config-repo.git
   $ mvp-gen init my-app --repo https://github.com/user/repo.git --branch develop
   $ mvp-gen init my-project --debug  Show debug information
+  $ mvp-gen init my-app --no-cache   Disable caching (use temp directories)
+  $ mvp-gen init my-project --direct-fetch  Fetch directly without any caching (fastest)
+  
+Cache Behavior:
+  - Default: Uses optimal cache directory (npm cache or OS cache)
+  - --no-cache: Uses temporary directories, cleaned up after use
+  - --direct-fetch: Fetches content directly from Git without any local storage
   
 Default Behavior:
   - Without --local: Downloads configs/templates from Git repository first
@@ -183,6 +197,12 @@ async function initializeProject(projectName: string, options: InitOptions) {
   const isDebug =
     process.env.NODE_ENV === 'development' || options.debug || options.verbose;
 
+  // Prepare cache options
+  const cacheOptions = {
+    useCache: !options.noCache,
+    directFetch: options.directFetch || false,
+  };
+
   if (isDebug) {
     console.log(
       chalk.cyan('\n🚀 MVP Generator - Git-First Configuration Loading')
@@ -190,6 +210,11 @@ async function initializeProject(projectName: string, options: InitOptions) {
     console.log(
       chalk.gray(
         `Mode: ${options.local ? 'Local First (Legacy)' : 'Git First (Default)'}`
+      )
+    );
+    console.log(
+      chalk.gray(
+        `Cache: ${cacheOptions.directFetch ? 'Direct fetch (no cache)' : cacheOptions.useCache ? 'Enabled' : 'Disabled'}`
       )
     );
     if (!options.local) {
@@ -210,7 +235,8 @@ async function initializeProject(projectName: string, options: InitOptions) {
         options.templates,
         options.repo,
         options.branch,
-        options.local || false
+        options.local || false,
+        cacheOptions
       );
     } else if (options.config) {
       // Use unified config file (not implemented yet, for future)
@@ -223,14 +249,16 @@ async function initializeProject(projectName: string, options: InitOptions) {
         rootDir,
         options.repo,
         options.branch,
-        options.local || false
+        options.local || false,
+        cacheOptions
       );
       globalConfig = await loadConfig(
         configFiles.workflow,
         configFiles.templates,
         options.repo,
         options.branch,
-        options.local || false
+        options.local || false,
+        cacheOptions
       );
     } else {
       // Auto-discover config files with Git-first approach
@@ -238,14 +266,16 @@ async function initializeProject(projectName: string, options: InitOptions) {
         rootDir,
         options.repo,
         options.branch,
-        options.local || false
+        options.local || false,
+        cacheOptions
       );
       globalConfig = await loadConfig(
         configFiles.workflow,
         configFiles.templates,
         options.repo,
         options.branch,
-        options.local || false
+        options.local || false,
+        cacheOptions
       );
     }
 
@@ -407,7 +437,8 @@ async function initializeProject(projectName: string, options: InitOptions) {
           targetDir,
           options.repo,
           options.branch,
-          isDebug
+          isDebug,
+          cacheOptions
         );
 
         if (isDebug) {
